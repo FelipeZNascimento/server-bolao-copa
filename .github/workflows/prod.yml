@@ -28,6 +28,17 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: |
+            ~/cache
+            !~/cache/exclude
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
       - name: Install dependencies
         run: npm install
 
