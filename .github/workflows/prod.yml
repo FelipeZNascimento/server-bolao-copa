@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [master]
 
-  # Enabling CI/CD on DEV for testing purposeses
+  # Enabling CI/CD on DEV for testing purposes
   # push:
   #   branches: [master]
 
@@ -27,6 +27,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
 
       - name: 🔨 Build JS Files
         run: npm run build
