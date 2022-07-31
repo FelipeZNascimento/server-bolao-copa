@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [master]
 
-  # Enabling CI/CD on DEV for testing purposes a
+  # Enabling CI/CD on DEV for testing purposeses
   # push:
   #   branches: [master]
 
