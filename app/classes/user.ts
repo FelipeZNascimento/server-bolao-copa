@@ -1,0 +1,109 @@
+import SuccessClass from './success';
+import ErrorClass from './error';
+import QueryMaker from './queryMaker';
+
+export interface IUser {
+  id: number | null;
+  email?: string;
+  name?: string;
+  nickname: string;
+  password?: string | null;
+  isActive: boolean;
+}
+
+class UserClass extends QueryMaker {
+  error: ErrorClass;
+  success: SuccessClass;
+
+  email: string;
+  id: number | null;
+  isActive: boolean;
+  name?: string;
+  nickname: string;
+  password?: string | null;
+
+  constructor(user: Partial<IUser>, req: any, res: any) {
+    super();
+
+    this.error = new ErrorClass([], req, res);
+    this.success = new SuccessClass([], req, res);
+
+    this.email = user.email || '';
+    this.id = user.id || null;
+    this.isActive = user.isActive || false;
+    this.name = user.name || '';
+    this.nickname = user.nickname || '';
+    this.password = user.password || null;
+  }
+
+  replaceProperties(user: Partial<IUser>) {
+    this.email = user.email || this.email;
+    this.id = user.id || this.id;
+    this.isActive = user.isActive || this.isActive;
+    this.name = user.name || this.name;
+    this.nickname = user.nickname || this.nickname;
+    this.password = user.password || this.password;
+  }
+
+  async checkEmail(email: IUser['email'], id: IUser['id'] | string) {
+    return super.runQuery(
+      `SELECT email FROM users WHERE email = ? AND id != ?`,
+      [email, id]
+    );
+  }
+
+  async checkNickname(nickname: IUser['nickname'], id: IUser['id'] | string) {
+    return super.runQuery(
+      `SELECT nickname FROM users_info WHERE nickname = ? AND id != ?`,
+      [nickname, id]
+    );
+  }
+
+  async getAll() {
+    return super.runQuery(
+      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active
+              FROM users_info`
+    );
+  }
+
+  async getById(id: IUser['id']) {
+    if (id === null) {
+      return [];
+    }
+
+    return super.runQuery(
+      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active
+    FROM users_info
+    WHERE id_user = ?`,
+      [id]
+    );
+  }
+
+  async register(email: IUser['email'], password: IUser['password']) {
+    return super.runQuery(
+      `INSERT INTO users (email, password)
+        VALUES(?, ?);`,
+      [email, password]
+    );
+  }
+
+  async registerInfo(id: IUser['id'], nickname: IUser['nickname']) {
+    return super.runQuery(
+      `INSERT INTO users_info (id_user, nickname, is_active) 
+          VALUES(?, ?, ?);`,
+      [id, nickname, false]
+    );
+  }
+
+  async login(email: IUser['email'], password: IUser['password']) {
+    return super.runQuery(
+      `SELECT users.id, users.email, users_info.name, users_info.nickname
+      FROM users
+      INNER JOIN users_info ON users.id = users_info.id_user
+      WHERE email = ? AND password = ?`,
+      [email, password]
+    );
+  }
+}
+
+export default UserClass;
