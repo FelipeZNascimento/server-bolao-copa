@@ -1,14 +1,12 @@
-import * as User from '../model/user';
-import { IUser } from '../model/types';
+import ErrorClass from '../classes/error';
+import SuccessClass from '../classes/success';
+import UserClass, { IUser } from '../classes/user';
+import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 
-const checkExistingValues = async (
-  email: string,
-  nickname: string,
-  loggedUserId = null
-) => {
+const checkExistingValues = async (userInstance: UserClass) => {
   const allQueries = [
-    User.checkEmail(email, loggedUserId || ''),
-    User.checkNickname(nickname, loggedUserId || '')
+    userInstance.checkEmail(userInstance.email, userInstance.id || ''),
+    userInstance.checkNickname(userInstance.nickname, userInstance.id || '')
   ];
 
   const allResults = await Promise.allSettled(allQueries);
@@ -17,151 +15,150 @@ const checkExistingValues = async (
     .map((res) => res.reason);
 
   if (rejectedReasons.length > 0) {
-    throw new Error(rejectedReasons[0]);
+    return new ErrorClass([
+      { code: UNKNOWN_ERROR_CODE, message: rejectedReasons[0] }
+    ]);
   }
 
   const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
     .filter((res) => res.status === 'fulfilled')
     .map((res) => res.value);
 
-  let errorMessage = '';
+  let result = new ErrorClass();
   if (fulfilledValues[0].length > 0) {
-    errorMessage += 'Email já está sendo usado.';
+    result.pushResult(ERROR_CODES.USER_EXISTING_EMAIL);
   }
 
   if (fulfilledValues[1].length > 0) {
-    errorMessage += ' Apelido já está sendo usado.';
+    result.pushResult(ERROR_CODES.USER_EXISTING_NICKNAME);
   }
 
-  return errorMessage;
+  return result;
 };
 
 exports.listAll = async function (req: any, res: any) {
+  const userInstance = new UserClass({}, req, res);
+
   try {
-    await User.getAll().then((list: IUser[]) => {
-      res.send(list);
+    await userInstance.getAll().then((users: IUser[]) => {
+      userInstance.success.setResult(users);
+      return userInstance.success.returnApi();
     });
   } catch (error) {
-    let result;
-    if (typeof error === 'string') {
-      result = error.toUpperCase(); // works, `e` narrowed to string
-    } else if (error instanceof Error) {
-      result = error.message; // works, `e` narrowed to Error
-    }
-
-    console.log(result);
-    res.status(400).send(result);
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
   }
 };
 
 exports.listById = async function (req: any, res: any) {
+  const userInstance = new UserClass({}, req, res);
   const { id } = req.params;
-  //   if (req.session.user) {
-  //     User.updateLastOnlineTime(req.session.user.id);
-  //   }
 
   try {
-    await User.getById(id).then((user: IUser) => {
-      res.send(user);
+    await userInstance.getById(id).then((users: IUser[]) => {
+      userInstance.success.setResult(users);
+      return userInstance.success.returnApi();
     });
   } catch (error) {
-    let result;
-    if (typeof error === 'string') {
-      result = error.toUpperCase(); // works, `e` narrowed to string
-    } else if (error instanceof Error) {
-      result = error.message; // works, `e` narrowed to Error
-    }
-
-    console.log(result);
-    res.status(400).send(result);
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
   }
 };
 
 exports.register = async function register(req: any, res: any) {
-  const userData: IUser = User.initialize(req.body);
+  const userInstance = new UserClass(req.body, req, res);
   try {
-    if (!userData.email || !userData.password || !userData.nickname) {
-      throw new Error('Missing parameters');
-    }
-    const checkResult = await checkExistingValues(
-      userData.email,
-      userData.nickname
-    );
-
-    if (checkResult !== '') {
-      throw new Error(checkResult);
+    if (
+      !userInstance.email ||
+      !userInstance.password ||
+      !userInstance.nickname
+    ) {
+      userInstance.error.pushResult(ERROR_CODES.MISSING_PARAMS);
+      return userInstance.error.returnApi();
     }
 
-    await User.register(userData).then(async (result: any) => {
-      userData.id = result.insertId;
-      await User.registerInfo(userData).then(async () => {
-        await User.login(userData.email, userData.password).then(
-          (loginResult: IUser[]) => {
-            if (loginResult.length > 0) {
-              const newUser = User.initialize(loginResult[0]);
-              req.session.user = newUser;
+    const checkResult: ErrorClass = await checkExistingValues(userInstance);
 
-              // User.updateLastOnlineTime(newUser.id);
-              res.send(newUser);
-            } else {
-              res.send(null);
-            }
-          }
-        );
+    if (checkResult.result.length > 0) {
+      userInstance.error.setResult(checkResult.result);
+      return userInstance.error.returnApi();
+    }
+
+    await userInstance
+      .register(userInstance.email, userInstance.password)
+      .then(async (result: any) => {
+        userInstance.id = result.insertId;
+        await userInstance
+          .registerInfo(userInstance.id, userInstance.nickname)
+          .then(async () => {
+            await userInstance
+              .login(userInstance.email, userInstance.password)
+              .then((loginResult: IUser[]) => {
+                if (loginResult.length > 0) {
+                  const newUser = loginResult[0];
+                  userInstance.replaceProperties(newUser);
+                  req.session.user = newUser;
+                  userInstance.success.setResult([newUser]);
+                  return userInstance.success.returnApi();
+
+                  // User.updateLastOnlineTime(newUser.id);
+                } else {
+                  userInstance.error.pushResult(ERROR_CODES.USER_UNKNOWN);
+                  return userInstance.error.returnApi();
+                }
+              });
+          });
       });
-    });
   } catch (error) {
-    let result;
-    if (typeof error === 'string') {
-      result = error.toUpperCase(); // works, `e` narrowed to string
-    } else if (error instanceof Error) {
-      result = error.message; // works, `e` narrowed to Error
-    }
-
-    console.log(result);
-    res.status(400).send(result);
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
   }
 };
 
 exports.login = async function (req: any, res: any) {
+  const userInstance = new UserClass(req.body, req, res);
+
   if (req.session.user) {
-    return res.status(400).send('User already logged in.');
+    userInstance.error.setResult([ERROR_CODES.USER_EXISTING]);
+    return userInstance.error.returnApi();
   }
 
-  const userData: IUser = User.initialize(req.body);
-
   try {
-    if (!userData.email || !userData.password) {
-      throw new Error('Missing parameters');
+    if (!userInstance.email || !userInstance.password) {
+      userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+      return userInstance.error.returnApi();
     }
-    await User.login(userData.email, userData.password).then(
-      (loginResult: IUser[]) => {
+    await userInstance
+      .login(userInstance.email, userInstance.password)
+      .then((loginResult: IUser[]) => {
         if (loginResult.length > 0) {
-          req.session.user = User.initialize(loginResult[0]);
-          res.send(loginResult[0]);
+          const newUser = loginResult[0];
+          userInstance.replaceProperties(newUser);
+          req.session.user = newUser;
+          userInstance.success.setResult({ loggedUser: newUser });
+          return userInstance.success.returnApi();
         } else {
-          res.send(null);
+          userInstance.error.pushResult(ERROR_CODES.USER_WRONG_CREDENTIALS);
+          return userInstance.error.returnApi();
         }
-      }
-    );
+      });
   } catch (error) {
-    let result;
-    if (typeof error === 'string') {
-      result = error.toUpperCase(); // works, `e` narrowed to string
-    } else if (error instanceof Error) {
-      result = error.message; // works, `e` narrowed to Error
-    }
-
-    console.log(result);
-    res.status(400).send(result);
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
   }
 };
 
 exports.logout = function (req: any, res: any) {
   if (!req.session.user) {
-    return res.status(400).send('Logout: User not found.');
+    const errorInstance = new ErrorClass(
+      [ERROR_CODES.USER_NOT_FOUND],
+      req,
+      res
+    );
+    return errorInstance.returnApi();
   }
 
   req.session.destroy();
-  res.status(200).send(true);
+  const successInstance = new SuccessClass([], req, res);
+  return successInstance.returnApi();
 };
