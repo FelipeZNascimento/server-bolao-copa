@@ -15,9 +15,9 @@ const checkExistingValues = async (userInstance: UserClass) => {
     .map((res) => res.reason);
 
   if (rejectedReasons.length > 0) {
-    return new ErrorClass([
-      { code: UNKNOWN_ERROR_CODE, message: rejectedReasons[0] }
-    ]);
+    return new ErrorClass({
+      errors: [{ code: UNKNOWN_ERROR_CODE, message: rejectedReasons[0] }]
+    });
   }
 
   const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
@@ -79,8 +79,8 @@ exports.register = async function register(req: any, res: any) {
 
     const checkResult: ErrorClass = await checkExistingValues(userInstance);
 
-    if (checkResult.result.length > 0) {
-      userInstance.error.setResult(checkResult.result);
+    if (checkResult.result.errors.length > 0) {
+      userInstance.error.setResult(checkResult.result.errors);
       return userInstance.error.returnApi();
     }
 
@@ -151,7 +151,7 @@ exports.login = async function (req: any, res: any) {
 exports.logout = function (req: any, res: any) {
   if (!req.session.user) {
     const errorInstance = new ErrorClass(
-      [ERROR_CODES.USER_NOT_FOUND],
+      { errors: [ERROR_CODES.USER_NOT_FOUND] },
       req,
       res
     );
@@ -161,4 +161,100 @@ exports.logout = function (req: any, res: any) {
   req.session.destroy();
   const successInstance = new SuccessClass([], req, res);
   return successInstance.returnApi();
+};
+
+exports.updateInfo = async function (req: any, res: any) {
+  const userInstance = new UserClass(req.body, req, res);
+  if (!req.session.user) {
+    userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+    return userInstance.error.returnApi();
+  }
+
+  if (!userInstance.id || !userInstance.nickname || !userInstance.name) {
+    userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+    return userInstance.error.returnApi();
+  }
+  try {
+    const checkResult: ErrorClass = await checkExistingValues(userInstance);
+
+    if (checkResult.result.errors.length > 0) {
+      userInstance.error.setResult(checkResult.result.errors);
+      return userInstance.error.returnApi();
+    }
+
+    await userInstance
+      .updateInfo(userInstance.id, userInstance.name, userInstance.nickname)
+      .then(() => {
+        req.session.user = {
+          id: userInstance.id,
+          name: userInstance.name,
+          email: userInstance.email || req.session.user.email,
+          nickname: userInstance.nickname
+        };
+
+        userInstance.success.setResult({
+          loggedUser: {
+            id: userInstance.id,
+            name: userInstance.name,
+            email: userInstance.email || req.session.user.email,
+            nickname: userInstance.nickname,
+            isActive: true
+          }
+        });
+
+        return userInstance.success.returnApi();
+      });
+  } catch (error) {
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
+  }
+};
+
+exports.updatePassword = async function (req: any, res: any) {
+  const userInstance = new UserClass(req.body, req, res);
+  if (!req.session.user) {
+    userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+    return userInstance.error.returnApi();
+  }
+
+  if (!userInstance.id || !userInstance.password || !userInstance.newPassword) {
+    userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+    return userInstance.error.returnApi();
+  }
+
+  try {
+    const checkResult: ErrorClass = await checkExistingValues(userInstance);
+
+    if (checkResult.result.errors.length > 0) {
+      userInstance.error.setResult(checkResult.result.errors);
+      return userInstance.error.returnApi();
+    }
+
+    await userInstance
+      .updatePassword(
+        userInstance.id,
+        userInstance.password,
+        userInstance.newPassword
+      )
+      .then((queryInfo) => {
+        if (queryInfo.affectedRows > 0) {
+          userInstance.success.setResult({
+            loggedUser: {
+              id: req.session.user.id,
+              name: req.session.user.name,
+              email: req.session.user.email,
+              nickname: req.session.user.nickname,
+              isActive: true
+            }
+          });
+          return userInstance.success.returnApi();
+        } else {
+          userInstance.error.setResult([ERROR_CODES.USER_WRONG_PASSWORD]);
+          return userInstance.error.returnApi();
+        }
+      });
+  } catch (error) {
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
+  }
 };

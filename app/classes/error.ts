@@ -7,13 +7,17 @@ interface IErrorClass {
   pushResult: (error: TError) => void;
 }
 
+type TResult = {
+  errors: TError[];
+};
+
 class ErrorClass implements IErrorClass {
-  result: TError[];
+  result: TResult;
   request: any;
   response: any;
 
   constructor(
-    result: TError[] = [],
+    result: TResult = { errors: [] },
     request: any = null,
     response: any = null
   ) {
@@ -39,11 +43,11 @@ class ErrorClass implements IErrorClass {
   }
 
   pushResult(result: TError) {
-    this.result.push(result);
+    this.result.errors.push(result);
   }
 
   setResult(result: TError[]) {
-    this.result = result;
+    this.result.errors = result;
   }
 
   returnApi() {

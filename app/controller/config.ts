@@ -9,7 +9,7 @@ exports.default = async (req: any, res: any) => {
   configInstance.setLoggedUser(loggedUser);
   try {
     const matchInstance = new MatchClass(req, res);
-    const betInstance = new BetClass(req, res);
+    const betInstance = new BetClass({}, req, res);
 
     const allQueries = [
       matchInstance.getAll(),
@@ -36,7 +36,7 @@ exports.default = async (req: any, res: any) => {
 
     const matches = fulfilledValues[0];
     betInstance.pushBets(fulfilledValues[1], false); // All available bets
-    betInstance.pushBets(fulfilledValues[2], true); // LoggedUserBets
+    betInstance.pushBets(fulfilledValues[2], true); // All loggedUserBets
     const bets = betInstance.bets;
     const loggedUserBets = betInstance.loggedUserBets;
 
