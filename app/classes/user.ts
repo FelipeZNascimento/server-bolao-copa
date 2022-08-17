@@ -8,6 +8,7 @@ export interface IUser {
   name?: string;
   nickname: string;
   password?: string | null;
+  newPassword?: string | null;
   isActive: boolean;
 }
 
@@ -21,19 +22,21 @@ class UserClass extends QueryMaker {
   name?: string;
   nickname: string;
   password?: string | null;
+  newPassword?: string | null;
 
   constructor(user: Partial<IUser>, req: any, res: any) {
     super();
 
-    this.error = new ErrorClass([], req, res);
+    this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
     this.email = user.email || '';
-    this.id = user.id || null;
+    this.id = Number.isInteger(user.id) ? Number(user.id) : null;
     this.isActive = user.isActive || false;
     this.name = user.name || '';
     this.nickname = user.nickname || '';
     this.password = user.password || null;
+    this.newPassword = user.newPassword || null;
   }
 
   replaceProperties(user: Partial<IUser>) {
@@ -54,7 +57,7 @@ class UserClass extends QueryMaker {
 
   async checkNickname(nickname: IUser['nickname'], id: IUser['id'] | string) {
     return super.runQuery(
-      `SELECT nickname FROM users_info WHERE nickname = ? AND id != ?`,
+      `SELECT nickname FROM users_info WHERE nickname = ? AND id_user != ?`,
       [nickname, id]
     );
   }
@@ -102,6 +105,33 @@ class UserClass extends QueryMaker {
       INNER JOIN users_info ON users.id = users_info.id_user
       WHERE email = ? AND password = ?`,
       [email, password]
+    );
+  }
+
+  async updateInfo(
+    id: IUser['id'],
+    name: IUser['name'],
+    nickname: IUser['nickname']
+  ) {
+    return super.runQuery(
+      `UPDATE users_info
+        SET name = ?,
+        nickname = ?
+        WHERE id_user = ?`,
+      [name, nickname, id]
+    );
+  }
+
+  async updatePassword(
+    id: IUser['id'],
+    password: IUser['password'],
+    newPassword: IUser['newPassword']
+  ) {
+    return super.runQuery(
+      `UPDATE users
+        SET password = ?
+        WHERE id = ? AND password = ?`,
+      [newPassword, id, password]
     );
   }
 }

@@ -19,7 +19,7 @@ class ConfigClass extends QueryMaker {
   constructor(req: any, res: any) {
     super();
 
-    this.error = new ErrorClass([], req, res);
+    this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
     this.loggedUser = null;

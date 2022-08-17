@@ -50,8 +50,8 @@ export interface IMatchRaw {
   timestamp: string;
   round: number;
   status: number;
-  id_home: number;
-  id_away: number;
+  home_id: number;
+  away_id: number;
   goals_home: number;
   goals_away: number;
   penalties_home: number;
@@ -119,7 +119,7 @@ class MatchClass extends QueryMaker {
   constructor(req: any, res: any) {
     super();
 
-    this.error = new ErrorClass([], req, res);
+    this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
     this.matches = [];
@@ -129,12 +129,13 @@ class MatchClass extends QueryMaker {
   pushMatches(
     matchesRaw: IMatchRaw[],
     bets: IBet[] = [],
-    loggedUserBets: IBet | null = null
+    loggedUserBets: IBet[] = []
   ) {
     matchesRaw.forEach((matchRaw: IMatchRaw) => {
       const matchBets = bets.filter((bet) => bet.idMatch === matchRaw.id);
-      const matchLoggedUserBets =
-        loggedUserBets?.idMatch === matchRaw.id ? loggedUserBets : null;
+      const matchLoggedUserBets = loggedUserBets.filter(
+        (bet) => bet.idMatch === matchRaw.id
+      );
 
       const formattedMatch: IMatch = {
         id: matchRaw.id,
@@ -142,9 +143,10 @@ class MatchClass extends QueryMaker {
         round: matchRaw.round,
         status: matchRaw.status,
         bets: matchBets,
-        loggedUserBets: matchLoggedUserBets,
+        loggedUserBets:
+          matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null,
         homeTeam: {
-          id: matchRaw.id_home,
+          id: matchRaw.home_id,
           name: matchRaw.home_name,
           nameEn: matchRaw.home_name_en,
           abbreviation: matchRaw.home_name_abbreviation,
@@ -163,7 +165,7 @@ class MatchClass extends QueryMaker {
           }
         },
         awayTeam: {
-          id: matchRaw.id_away,
+          id: matchRaw.away_id,
           name: matchRaw.away_name,
           nameEn: matchRaw.away_name_en,
           abbreviation: matchRaw.away_name_abbreviation,

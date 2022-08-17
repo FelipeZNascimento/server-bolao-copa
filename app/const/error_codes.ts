@@ -5,6 +5,7 @@ export type TError = {
 
 const GENERAL = '00';
 const USER_RELATED = '10';
+const BETS_RELATED = '20';
 export const UNKNOWN_ERROR_CODE = 'XXX';
 
 const USER_ERRORS = {
@@ -25,8 +26,12 @@ const USER_ERRORS = {
     message: 'Usuário já logado.'
   },
   USER_NOT_FOUND: {
-    code: `${USER_RELATED}4`,
+    code: `${USER_RELATED}5`,
     message: 'Usuário não encontrado.'
+  },
+  USER_WRONG_PASSWORD: {
+    code: `${USER_RELATED}6`,
+    message: 'Senha inválida. Tente novamente.'
   },
   USER_UNKNOWN: {
     code: `${USER_RELATED}9`,
@@ -34,14 +39,26 @@ const USER_ERRORS = {
   }
 };
 
+const BET_ERRORS = {
+  BAD_PARAMS: {
+    code: `${BETS_RELATED}1`,
+    message: 'Pedido inválido (mismatched params).'
+  },
+  BET_UNKNOWN: {
+    code: `${BETS_RELATED}9`,
+    message: 'Erro desconhecido.'
+  }
+};
+
 export const ERROR_CODES = {
   MISSING_PARAMS: {
     code: `${GENERAL}1`,
-    message: 'Pedido inválido.'
+    message: 'Pedido inválido (missing params).'
   },
   GENERAL_UNKNOWN: {
     code: `${GENERAL}2`,
     message: 'Erro desconhecido.'
   },
-  ...USER_ERRORS
+  ...USER_ERRORS,
+  ...BET_ERRORS
 };

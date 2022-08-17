@@ -18,6 +18,7 @@ export interface IBetRaw {
 export interface IBet {
   id: number;
   idMatch: number;
+  idUser?: number;
   user: IUser;
   goalsHome: number;
   goalsAway: number;
@@ -28,17 +29,33 @@ class BetClass extends QueryMaker {
   error: ErrorClass;
   success: SuccessClass;
 
-  bets: IBet[];
-  loggedUserBets: IBet | null;
+  id: number | null;
+  idMatch: number | null;
+  idUser: number | null;
+  goalsHome: number | null;
+  goalsAway: number | null;
 
-  constructor(req: any, res: any) {
+  bets: IBet[];
+  loggedUserBets: IBet[];
+
+  constructor(bet: Partial<IBet>, req: any, res: any) {
     super();
 
-    this.error = new ErrorClass([], req, res);
+    this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
+    this.id = Number.isInteger(bet.id) ? Number(bet.id) : null;
+    this.idMatch = Number.isInteger(bet.idMatch) ? Number(bet.idMatch) : null;
+    this.idUser = Number.isInteger(bet.idUser) ? Number(bet.idUser) : null;
+    this.goalsHome = Number.isInteger(bet.goalsHome)
+      ? Number(bet.goalsHome)
+      : null;
+    this.goalsAway = Number.isInteger(bet.goalsAway)
+      ? Number(bet.goalsAway)
+      : null;
+
     this.bets = [];
-    this.loggedUserBets = null;
+    this.loggedUserBets = [];
   }
 
   pushBets(betsRaw: IBetRaw[], isLoggedUserBets: boolean = false) {
@@ -58,7 +75,7 @@ class BetClass extends QueryMaker {
       };
 
       if (isLoggedUserBets) {
-        this.loggedUserBets = formattedBet;
+        this.loggedUserBets.push(formattedBet);
       } else {
         this.bets.push(formattedBet);
       }
@@ -92,6 +109,23 @@ class BetClass extends QueryMaker {
         LEFT JOIN matches ON bets.id_match = matches.id
         WHERE bets.id_user = ?`,
       [id]
+    );
+  }
+
+  async update(
+    idMatch: IBet['idMatch'],
+    idUser: IUser['id'],
+    goalsAway: IBet['goalsAway'] | null,
+    goalsHome: IBet['goalsHome'] | null
+  ) {
+    return super.runQuery(
+      `INSERT INTO bets (id_match, id_user, goals_home, goals_away)
+        SELECT ?, ?, ?, ?
+        FROM matches WHERE matches.timestamp > UNIX_TIMESTAMP()
+        ON DUPLICATE KEY UPDATE
+        goals_home = VALUES(goals_home),
+        goals_away = VALUES(goals_away)`,
+      [idMatch, idUser, goalsHome, goalsAway]
     );
   }
 }

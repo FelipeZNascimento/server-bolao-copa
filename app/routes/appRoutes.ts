@@ -1,6 +1,7 @@
 import { Express } from 'express';
 ('use strict');
 const routes = (app: Express) => {
+  const betController = require('../controller/bet');
   const configController = require('../controller/config');
   const userController = require('../controller/user');
 
@@ -8,13 +9,18 @@ const routes = (app: Express) => {
   app.route('/copa2022/general/config/').get(configController.default);
 
   // Users Routing
-  app.route('/copa2022/users/').get(userController.listAll);
-  //   app.route("/copa2022/user/update/").post(userController.update);
-  //   app.route("/copa2022/user/updatePreferences/").post(userController.updatePreferences);
+  app.route('/copa2022/user/').get(userController.listAll);
+  app.route('/copa2022/user/updateInfo/').post(userController.updateInfo);
+  app
+    .route('/copa2022/user/updatePassword/')
+    .post(userController.updatePassword);
   app.route('/copa2022/user/register/').post(userController.register);
   app.route('/copa2022/user/login/').post(userController.login);
   app.route('/copa2022/user/logout/').get(userController.logout);
   app.route('/copa2022/user/:id/').get(userController.listById);
+  
+  // Bets Routing
+  app.route('/copa2022/bet/update/').post(betController.update);
 
   app.use(function (req, res) {
     res.sendStatus(404);
