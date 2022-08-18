@@ -243,8 +243,8 @@ class MatchClass extends QueryMaker {
         awayConfederation.name_en as away_confederation_name_en, awayConfederation.abbreviation as away_confederation_abbreviation,
         refereeCountry.name as referee_country_name, refereeCountry.name_en as referee_country_name_en,
         refereeCountry.abbreviation as referee_country_abbreviation,
-        GROUP_CONCAT(homeTeamColors.color ORDER BY homeTeamColors.id) home_team_colors,
-        GROUP_CONCAT(awayTeamColors.color ORDER BY awayTeamColors.id) away_team_colors
+        GROUP_CONCAT(DISTINCT homeTeamColors.color ORDER BY homeTeamColors.id) home_team_colors,
+        GROUP_CONCAT(DISTINCT awayTeamColors.color ORDER BY awayTeamColors.id) away_team_colors
         FROM matches
         LEFT JOIN teams as homeTeam ON matches.id_home = homeTeam.id
         LEFT JOIN teams as awayTeam ON matches.id_away = awayTeam.id
