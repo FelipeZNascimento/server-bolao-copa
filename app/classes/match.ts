@@ -2,20 +2,7 @@ import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import { IBet } from './bet';
-
-interface ITeam {
-  id: number;
-  isoCode: string;
-  goals: number;
-  penalties: number;
-  name: string;
-  nameEn: string;
-  abbreviation: string;
-  abbreviationEn: string;
-  confederation: IConfederation;
-  group: string;
-  colors: string[];
-}
+import { ITeam } from './team';
 
 interface IStadium {
   id: number;

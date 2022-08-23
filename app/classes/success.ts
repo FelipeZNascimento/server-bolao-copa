@@ -1,25 +1,24 @@
 import ResponseObjectClass from './responseObject';
 import { IConfig } from './config';
 import { IUser } from './user';
-
-type TResult = IUser[] | IConfig;
+import { ITeam } from './team';
 
 class SuccessClass {
-  private result: TResult;
+  private result: any[];
   private request: any;
   private response: any;
 
-  constructor(result: TResult = [], request: any = null, response: any = null) {
+  constructor(result: any = [], request: any = null, response: any = null) {
     this.result = result;
     this.request = request;
     this.response = response;
   }
 
-  setResult(result: TResult) {
+  setResult(result: any) {
     this.result = result;
   }
 
-  pushResult(result: IUser) {
+  pushResult(result: any) {
     // Only push if array
     if (Array.isArray(this.result)) {
       this.result.push(result);
