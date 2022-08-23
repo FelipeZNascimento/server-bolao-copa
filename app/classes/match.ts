@@ -5,11 +5,13 @@ import { IBet } from './bet';
 
 interface ITeam {
   id: number;
+  isoCode: string;
   goals: number;
   penalties: number;
   name: string;
   nameEn: string;
   abbreviation: string;
+  abbreviationEn: string;
   confederation: IConfederation;
   group: string;
   colors: string[];
@@ -59,15 +61,19 @@ export interface IMatchRaw {
   id_stadium: number;
   id_referee: number;
   home_name: string;
-  home_name_en: string;
-  home_name_abbreviation: string;
-  home_group: string;
-  home_id_confederation: string;
   away_name: string;
+  home_name_en: string;
   away_name_en: string;
+  home_name_abbreviation: string;
   away_name_abbreviation: string;
+  home_name_abbreviation_en: string;
+  away_name_abbreviation_en: string;
+  home_group: string;
   away_group: string;
+  home_id_confederation: string;
   away_id_confederation: string;
+  home_iso_code: string;
+  away_iso_code: string;
   referee_name: string;
   referee_birth: string;
   referee_id_country: number;
@@ -77,12 +83,12 @@ export interface IMatchRaw {
   stadium_geo_latitude: string;
   stadium_geo_longitude: string;
   home_confederation_id: number;
-  home_confederation_abbreviation: string;
-  home_confederation_name: string;
-  home_confederation_name_en: string;
   away_confederation_id: number;
+  home_confederation_abbreviation: string;
   away_confederation_abbreviation: string;
+  home_confederation_name: string;
   away_confederation_name: string;
+  home_confederation_name_en: string;
   away_confederation_name_en: string;
   referee_country_name: string;
   referee_country_name_en: string;
@@ -147,9 +153,11 @@ class MatchClass extends QueryMaker {
           matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null,
         homeTeam: {
           id: matchRaw.home_id,
+          isoCode: matchRaw.home_iso_code,
           name: matchRaw.home_name,
           nameEn: matchRaw.home_name_en,
           abbreviation: matchRaw.home_name_abbreviation,
+          abbreviationEn: matchRaw.home_name_abbreviation_en,
           colors:
             matchRaw.home_team_colors === null
               ? []
@@ -166,9 +174,11 @@ class MatchClass extends QueryMaker {
         },
         awayTeam: {
           id: matchRaw.away_id,
+          isoCode: matchRaw.away_iso_code,
           name: matchRaw.away_name,
           nameEn: matchRaw.away_name_en,
           abbreviation: matchRaw.away_name_abbreviation,
+          abbreviationEn: matchRaw.away_name_abbreviation_en,
           colors:
             matchRaw.away_team_colors === null
               ? []
@@ -226,12 +236,23 @@ class MatchClass extends QueryMaker {
       `SELECT matches.id, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,
         matches.penalties_home, matches.penalties_away, matches.id_referee, matches.id_stadium,
         matches.status,
-        homeTeam.id as home_id, homeTeam.name as home_name, homeTeam.name_en as home_name_en,
-        homeTeam.abbreviation as home_name_abbreviation, homeTeam.group as home_group,
-        homeTeam.id_confederation as home_id_confederation,
-        awayTeam.id as away_id, awayTeam.name as away_name, awayTeam.name_en as away_name_en,
-        awayTeam.abbreviation as away_name_abbreviation, awayTeam.group as away_group,
-        awayTeam.id_confederation as away_id_confederation,
+
+        homeTeam.id as home_id, homeTeam.group as home_group, 
+        
+        homeTeamCountry.id_confederation as home_id_confederation,
+        homeTeamCountry.name as home_name, homeTeamCountry.name_en as home_name_en,
+        homeTeamCountry.abbreviation as home_name_abbreviation,
+        homeTeamCountry.abbreviation_en as home_name_abbreviation_en,
+        homeTeamCountry.iso_code as home_iso_code, 
+        
+        awayTeam.id as away_id, awayTeam.group as away_group,
+        
+        awayTeamCountry.id_confederation as away_id_confederation,
+        awayTeamCountry.name as away_name, awayTeamCountry.name_en as away_name_en,
+        awayTeamCountry.abbreviation as away_name_abbreviation,
+        awayTeamCountry.abbreviation_en as away_name_abbreviation_en,
+        awayTeamCountry.iso_code as away_iso_code, 
+        
         referees.name as referee_name, referees.date_of_birth as referee_birth,
         referees.id_country as referee_id_country,
         stadiums.name as stadium_name, stadiums.city as stadium_city,
@@ -248,10 +269,12 @@ class MatchClass extends QueryMaker {
         FROM matches
         LEFT JOIN teams as homeTeam ON matches.id_home = homeTeam.id
         LEFT JOIN teams as awayTeam ON matches.id_away = awayTeam.id
+        LEFT JOIN countries as homeTeamCountry ON homeTeamCountry.id = homeTeam.id_country
+        LEFT JOIN countries as awayTeamCountry ON awayTeamCountry.id = awayTeam.id_country
         LEFT JOIN referees ON matches.id_referee = referees.id
         LEFT JOIN stadiums ON matches.id_stadium = stadiums.id
-        LEFT JOIN confederations as homeConfederation ON homeTeam.id_confederation = homeConfederation.id
-        LEFT JOIN confederations as awayConfederation ON awayTeam.id_confederation = awayConfederation.id
+        LEFT JOIN confederations as homeConfederation ON homeTeamCountry.id_confederation = homeConfederation.id
+        LEFT JOIN confederations as awayConfederation ON awayTeamCountry.id_confederation = awayConfederation.id
         LEFT JOIN countries as refereeCountry ON referees.id_country = refereeCountry.id
         LEFT JOIN teams_colors as homeTeamColors ON homeTeamColors.id_team = matches.id_home
         LEFT JOIN teams_colors as awayTeamColors ON awayTeamColors.id_team = matches.id_away
