@@ -1,12 +1,7 @@
 name: CI/CD Prod
 
 on:
-  # Uncomment this to enable CI/CD on DEV for testing purposes
-  # pull_request:
-  #   branches: [master]
-
-  # Comment this to enable CI/CD only on DEV for testing purposes
-  push:
+  pull_request:
     branches: [master]
 
   # Allows you to run this workflow manually from the Actions tab
