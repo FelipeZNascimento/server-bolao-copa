@@ -109,7 +109,7 @@ class MatchClass extends QueryMaker {
   matches: IMatch[];
   matchesByRound: IRound[];
 
-  constructor(req: any, res: any) {
+  constructor(req?: any, res?: any) {
     super();
 
     this.error = new ErrorClass({ errors: [] }, req, res);
@@ -119,7 +119,11 @@ class MatchClass extends QueryMaker {
     this.matchesByRound = [];
   }
 
-  pushMatches(
+  setMatches(matches: IMatch[]) {
+    this.matches = matches;
+  }
+
+  pushMatchesRaw(
     matchesRaw: IMatchRaw[],
     bets: IBet[] = [],
     loggedUserBets: IBet[] = []
@@ -199,6 +203,41 @@ class MatchClass extends QueryMaker {
           latitude: matchRaw.stadium_geo_latitude,
           longitude: matchRaw.stadium_geo_longitude
         }
+      };
+
+      this.matches.push(formattedMatch);
+
+      const round = this.matchesByRound.find(
+        (matchByRound) => matchByRound.round === formattedMatch.round
+      );
+
+      if (round) {
+        round.matches.push(formattedMatch);
+      } else {
+        this.matchesByRound.push({
+          round: formattedMatch.round,
+          matches: [formattedMatch]
+        });
+      }
+    });
+  }
+
+  pushMatches(
+    matches: IMatch[],
+    bets: IBet[] = [],
+    loggedUserBets: IBet[] = []
+  ) {
+    matches.forEach((match: IMatch) => {
+      const matchBets = bets.filter((bet) => bet.idMatch === match.id);
+      const matchLoggedUserBets = loggedUserBets.filter(
+        (bet) => bet.idMatch === match.id
+      );
+
+      const formattedMatch: IMatch = {
+        ...match,
+        bets: matchBets,
+        loggedUserBets:
+          matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null
       };
 
       this.matches.push(formattedMatch);

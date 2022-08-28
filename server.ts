@@ -11,6 +11,9 @@ const https = require('https');
 const fs = require('fs');
 const SQLConfig = require('./app/const/sqlConfig');
 const logger = require('./app/utilities/logger');
+const myCache = require('./app/utilities/cache');
+const startup = require('./app/utilities/startup');
+const routes = require('./app/routes/appRoutes');
 
 // How to create localhost https node server
 // https://nodejs.org/en/knowledge/HTTP/servers/how-to-create-a-HTTPS-server/
@@ -86,6 +89,7 @@ app.use(logger);
 
 server
   .listen(serverPort, () => {
+    startup.start();
     console.log(
       `Web server listening on port ${serverPort} at ${environment} environment`
     );
@@ -101,7 +105,6 @@ server
     console.log(result);
   });
 
-const routes = require('./app/routes/appRoutes');
 routes(app); // register the routes
 
 module.exports = app;

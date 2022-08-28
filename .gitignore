@@ -8,3 +8,4 @@ certs/
 dist/
 
 request_logs.txt
+logs/
