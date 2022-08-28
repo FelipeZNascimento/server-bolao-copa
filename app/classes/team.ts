@@ -45,13 +45,17 @@ class TeamClass extends QueryMaker {
 
   teams: ITeam[];
 
-  constructor(req: any, res: any) {
+  constructor(req?: any, res?: any) {
     super();
 
     this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
     this.teams = [];
+  }
+
+  setTeams(teams: ITeam[]) {
+    this.teams = teams;
   }
 
   pushTeams(teamsRaw: ITeamRaw[]) {

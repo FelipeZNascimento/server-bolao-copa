@@ -3,6 +3,7 @@ import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import { IUser } from './user';
 import { IMatch, IRound } from './match';
+import { ITeam } from './team';
 
 export interface IConfig {
   loggedUser: IUser | null;
@@ -14,7 +15,8 @@ class ConfigClass extends QueryMaker {
 
   private loggedUser: IUser | null;
   private matches: IMatch[] | null;
-  private matchesByRound: IRound[] | null;
+  private seasonStart: number | null;
+  private teams: ITeam[] | null;
 
   constructor(req: any, res: any) {
     super();
@@ -24,7 +26,8 @@ class ConfigClass extends QueryMaker {
 
     this.loggedUser = null;
     this.matches = null;
-    this.matchesByRound = null;
+    this.seasonStart = null;
+    this.teams = null;
   }
 
   setLoggedUser(user: IUser) {
@@ -35,10 +38,20 @@ class ConfigClass extends QueryMaker {
     this.matches = matches;
   }
 
+  setTeams(teams: ITeam[]) {
+    this.teams = teams;
+  }
+
+  setSeasonStart(timestamp: number) {
+    this.seasonStart = timestamp;
+  }
+
   buildConfigObject() {
     return {
       loggedUser: this.loggedUser,
-      matches: this.matches
+      matches: this.matches,
+      seasonStart: this.seasonStart,
+      teams: this.teams
     };
   }
 }

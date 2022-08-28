@@ -1,5 +1,4 @@
 import TeamClass, { ITeam, ITeamRaw } from '../classes/team';
-import { ERROR_CODES } from '../const/error_codes';
 
 exports.listAll = async function (req: any, res: any) {
   const teamInstance = new TeamClass(req, res);

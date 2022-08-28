@@ -19,9 +19,11 @@ const routes = (app: Express) => {
   app.route('/copa2022/user/login/').post(userController.login);
   app.route('/copa2022/user/logout/').get(userController.logout);
   app.route('/copa2022/user/:id/').get(userController.listById);
-  
+
   // Bet Routing
-  app.route('/copa2022/bet/update/').post(betController.update);
+  app.route('/copa2022/bet/').post(betController.update);
+  app.route('/copa2022/extraBets/').get(betController.listAllExtras);
+  app.route('/copa2022/extraBets/').post(betController.updateExtra);
 
   // Team Routing
   app.route('/copa2022/team/').get(teamController.listAll);

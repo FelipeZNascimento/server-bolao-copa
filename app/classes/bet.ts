@@ -17,11 +17,20 @@ export interface IBetRaw {
 
 export interface IBet {
   id: number;
-  idMatch: number;
-  idUser?: number;
-  user: IUser;
   goalsHome: number;
   goalsAway: number;
+  idMatch: number;
+  idUser?: number;
+  timestamp: string;
+  user: IUser;
+}
+
+export interface IExtraBet {
+  id: number;
+  idExtraType: number;
+  idTeam: number | null;
+  idPlayer: number | null;
+  user: IUser;
   timestamp: string;
 }
 
@@ -126,6 +135,25 @@ class BetClass extends QueryMaker {
         goals_home = VALUES(goals_home),
         goals_away = VALUES(goals_away)`,
       [idMatch, idUser, goalsHome, goalsAway]
+    );
+  }
+
+  async updateExtra(
+    idUser: IUser['id'],
+    idExtraType: IExtraBet['idExtraType'],
+    idTeam: IExtraBet['idTeam'],
+    idPlayer: IExtraBet['idPlayer'],
+    seasonStart: number
+  ) {
+    return super.runQuery(
+      `INSERT INTO extra_bets (id_user, id_extra_type, id_team, id_player)
+        SELECT ?, ?, ?, ?
+        FROM extra_bets
+        WHERE ? < UNIX_TIMESTAMP()
+        ON DUPLICATE KEY UPDATE
+        id_team = VALUES(id_team),
+        id_player = VALUES(id_player)`,
+      [idUser, idExtraType, idTeam, idPlayer, seasonStart]
     );
   }
 }
