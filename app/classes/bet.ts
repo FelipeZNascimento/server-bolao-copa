@@ -99,7 +99,8 @@ class BetClass extends QueryMaker {
         FROM bets
         LEFT JOIN users_info ON bets.id_user = users_info.id_user
         LEFT JOIN matches ON bets.id_match = matches.id
-        WHERE UNIX_TIMESTAMP(matches.timestamp) <= UNIX_TIMESTAMP()`,
+        WHERE UNIX_TIMESTAMP(matches.timestamp) <= UNIX_TIMESTAMP()
+        AND bets.goals_home IS NOT null AND bets.goals_away IS NOT null`,
       []
     );
   }
