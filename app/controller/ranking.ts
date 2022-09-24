@@ -4,7 +4,7 @@ import RankingClass from '../classes/ranking';
 import TeamClass from '../classes/team';
 import UserClass, { IUser, IUserRaw } from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
-const myCache = require('../utilities/cache');
+import { myCache } from '../utilities/cache';
 
 exports.listAll = async (req: any, res: any) => {
   const betInstance = new BetClass({}, req, res);
@@ -80,7 +80,7 @@ exports.listAll = async (req: any, res: any) => {
         betInstance.bets
       );
       matchInstance.setMatches(mergedMatches);
-      myCache.set('matches', matchInstance.matches, 10);
+      myCache.setMatches(matchInstance.matches);
     }
     rankingInstance.prepareUsers(formattedUsers);
     rankingInstance.buildRanking(matchInstance.matches);

@@ -1,6 +1,6 @@
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
 import TeamClass, { ITeamRaw } from '../classes/team';
-const myCache = require('../utilities/cache');
+import { myCache } from '../utilities/cache';
 
 exports.start = async () => {
   console.log('---------------');
@@ -40,8 +40,8 @@ exports.start = async () => {
 
     teamInstance.setTeams(formattedTeams);
     matchInstance.setMatches(formattedMatches);
-    myCache.set('teams', teamInstance.teams, 60 * 60 * 24);
-    myCache.set('matches', matchInstance.matches, 10);
+    myCache.setTeams(teamInstance.teams);
+    myCache.setMatches(matchInstance.matches);
 
     const seasonStart = matchInstance.matches.reduce(
       (prev: IMatch, curr: IMatch) =>
@@ -50,7 +50,7 @@ exports.start = async () => {
 
     const seasonStartTimestamp =
       new Date(seasonStart.timestamp).getTime() / 1000;
-    myCache.set('seasonStart', seasonStartTimestamp, 60 * 60 * 24);
+    myCache.setSeasonStart(seasonStartTimestamp);
     console.log('Startup complete.');
     console.log('---------------');
   } catch (error: unknown) {

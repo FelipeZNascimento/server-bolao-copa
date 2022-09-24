@@ -1,4 +1,4 @@
-const myCache = require('../utilities/cache');
+import { myCache } from '../utilities/cache';
 
 import BetClass from '../classes/bet';
 import ExtraBetClass, { IExtraBetRaw } from '../classes/extraBet';
