@@ -67,28 +67,28 @@ class BetClass extends QueryMaker {
     this.loggedUserBets = [];
   }
 
-  pushBets(betsRaw: IBetRaw[], isLoggedUserBets: boolean = false) {
-    betsRaw.forEach((betRaw) => {
-      const formattedBet = {
-        id: betRaw.id,
-        idMatch: betRaw.id_match,
-        goalsHome: betRaw.goals_home,
-        goalsAway: betRaw.goals_away,
-        timestamp: betRaw.timestamp,
-        user: {
-          id: betRaw.id_user,
-          name: betRaw.user_name,
-          nickname: betRaw.user_nickname,
-          isActive: betRaw.user_is_active
-        }
-      };
-
-      if (isLoggedUserBets) {
-        this.loggedUserBets.push(formattedBet);
-      } else {
-        this.bets.push(formattedBet);
+  formatRawBet(betRaw: IBetRaw) {
+    return {
+      id: betRaw.id,
+      idMatch: betRaw.id_match,
+      goalsHome: betRaw.goals_home,
+      goalsAway: betRaw.goals_away,
+      timestamp: betRaw.timestamp,
+      user: {
+        id: betRaw.id_user,
+        name: betRaw.user_name,
+        nickname: betRaw.user_nickname,
+        isActive: betRaw.user_is_active
       }
-    });
+    };
+  }
+
+  setBets(bets: IBet[]) {
+    this.bets = bets;
+  }
+
+  setLoggedUserBets(bets: IBet[]) {
+    this.loggedUserBets = bets;
   }
 
   async getAll() {
@@ -99,7 +99,8 @@ class BetClass extends QueryMaker {
         FROM bets
         LEFT JOIN users_info ON bets.id_user = users_info.id_user
         LEFT JOIN matches ON bets.id_match = matches.id
-        WHERE matches.timestamp <= UNIX_TIMESTAMP()`,
+        WHERE UNIX_TIMESTAMP(matches.timestamp) <= UNIX_TIMESTAMP()
+        AND bets.goals_home IS NOT null AND bets.goals_away IS NOT null`,
       []
     );
   }
@@ -130,11 +131,11 @@ class BetClass extends QueryMaker {
     return super.runQuery(
       `INSERT INTO bets (id_match, id_user, goals_home, goals_away)
         SELECT ?, ?, ?, ?
-        FROM matches WHERE matches.timestamp > UNIX_TIMESTAMP()
+        FROM matches WHERE id = ? AND UNIX_TIMESTAMP(matches.timestamp) > UNIX_TIMESTAMP()
         ON DUPLICATE KEY UPDATE
         goals_home = VALUES(goals_home),
         goals_away = VALUES(goals_away)`,
-      [idMatch, idUser, goalsHome, goalsAway]
+      [idMatch, idUser, goalsHome, goalsAway, idMatch]
     );
   }
 

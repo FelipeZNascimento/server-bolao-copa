@@ -1,7 +1,8 @@
+import { myCache } from '../utilities/cache';
+
 import BetClass from '../classes/bet';
 import ExtraBetClass, { IExtraBetRaw } from '../classes/extraBet';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
-const myCache = require('../utilities/cache');
 
 exports.update = async (req: any, res: any) => {
   const betInstance = new BetClass(req.body, req, res);
@@ -17,7 +18,16 @@ exports.update = async (req: any, res: any) => {
 
   if (betInstance.idUser === null || betInstance.idMatch === null) {
     betInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
-    return betInstance.error.returnApi();
+    return betInstance.error.returnApi(401);
+  }
+
+  if (
+    betInstance.goalsAway !== null &&
+    betInstance.goalsHome !== null &&
+    (betInstance.goalsAway < 0 || betInstance.goalsHome < 0)
+  ) {
+    betInstance.error.setResult([ERROR_CODES.BAD_PARAMS]);
+    return betInstance.error.returnApi(401);
   }
 
   try {
@@ -32,7 +42,7 @@ exports.update = async (req: any, res: any) => {
         if (queryInfo.affectedRows > 0) {
           return betInstance.success.returnApi();
         } else {
-          betInstance.error.setResult([ERROR_CODES.BAD_PARAMS]);
+          betInstance.error.setResult([ERROR_CODES.NOT_ALLOWED]);
           return betInstance.error.returnApi();
         }
       });
@@ -43,15 +53,19 @@ exports.update = async (req: any, res: any) => {
 };
 
 exports.listAllExtras = async (req: any, res: any) => {
-  const betInstance = new ExtraBetClass(req.body, req, res);
+  const extraBetInstance = new ExtraBetClass(req, res);
   const loggedUser = req.session.user;
   const seasonStartTimestamp = myCache.get('seasonStart');
   const teams = myCache.get('teams');
 
   try {
     const allQueries = [
-      betInstance.getAll(seasonStartTimestamp),
-      betInstance.getFromLoggedUser(loggedUser ? loggedUser.id : null)
+      extraBetInstance
+        .getAll(seasonStartTimestamp)
+        .then((res) => ({ res: res, promiseContent: 'extraBets' })),
+      extraBetInstance
+        .getFromLoggedUser(loggedUser ? loggedUser.id : null)
+        .then((res) => ({ res: res, promiseContent: 'loggedUserExtraBets' }))
     ];
 
     const allResults = await Promise.allSettled(allQueries);
@@ -60,56 +74,83 @@ exports.listAllExtras = async (req: any, res: any) => {
       .map((res) => res.reason);
 
     if (rejectedReasons.length > 0) {
-      betInstance.error.pushResult({
+      extraBetInstance.error.pushResult({
         code: UNKNOWN_ERROR_CODE,
         message: rejectedReasons[0]
       });
-      return betInstance.error.returnApi();
+      return extraBetInstance.error.returnApi();
     }
 
     const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
-    betInstance.pushBets(fulfilledValues[0], teams, false); // All available bets
-    betInstance.pushBets(fulfilledValues[1], teams, true); // All loggedUserBets
-    const buildObject = betInstance.buildConfigObject();
-    betInstance.success.setResult(buildObject);
-    return betInstance.success.returnApi();
+    const extraBetsRaw: IExtraBetRaw[] = fulfilledValues.find(
+      (item) => item.promiseContent === 'extraBets'
+    ).res;
+
+    const loggedUserExtraBetsRaw: IExtraBetRaw[] = fulfilledValues.find(
+      (item) => item.promiseContent === 'loggedUserExtraBets'
+    ).res;
+
+    const formattedExtraBets = extraBetsRaw.map((bet) =>
+      extraBetInstance.formatRawExtraBet(bet, teams)
+    );
+
+    const formattedLoggedUserExtraBets = loggedUserExtraBetsRaw.map((bet) =>
+      extraBetInstance.formatRawExtraBet(bet, teams)
+    );
+
+    extraBetInstance.setExtraBets(formattedExtraBets);
+    extraBetInstance.setLoggedUserExtraBets(formattedLoggedUserExtraBets);
+
+    const buildObject = extraBetInstance.buildConfigObject();
+    extraBetInstance.success.setResult(buildObject);
+    return extraBetInstance.success.returnApi();
   } catch (error: unknown) {
-    betInstance.error.catchError(error);
-    return betInstance.error.returnApi();
+    extraBetInstance.error.catchError(error);
+    return extraBetInstance.error.returnApi();
   }
 };
 
 exports.updateExtra = async (req: any, res: any) => {
-  const betInstance = new ExtraBetClass(req.body, req, res);
+  const betInstance = new ExtraBetClass(req, res);
+  betInstance.setNewExtraBet(req.body);
 
   if (
     !req.session.user ||
-    betInstance.idUser === null ||
-    betInstance.idUser !== req.session.user.id
+    betInstance.newExtraBet === null ||
+    betInstance.newExtraBet.idUser === null ||
+    betInstance.newExtraBet.idUser !== req.session.user.id
   ) {
     betInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
-    return betInstance.error.returnApi();
+    return betInstance.error.returnApi(401);
   }
 
   if (
-    betInstance.idExtraType === null ||
-    (betInstance.idPlayer === null && betInstance.idTeam === null)
+    betInstance.newExtraBet.idExtraType === null ||
+    (betInstance.newExtraBet.idPlayer === null &&
+      betInstance.newExtraBet.idTeam === null)
   ) {
     betInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
     return betInstance.error.returnApi();
   }
 
+  if (!myCache.has('seasonStart')) {
+    betInstance.error.setResult([ERROR_CODES.CACHE_ERROR]);
+    return betInstance.error.returnApi();
+  }
+
+  const seasonStart = myCache.get('seasonStart');
+
   try {
     await betInstance
       .update(
-        betInstance.idUser,
-        betInstance.idExtraType,
-        betInstance.idTeam,
-        betInstance.idPlayer,
-        req.session.seasonStart
+        betInstance.newExtraBet.idUser,
+        betInstance.newExtraBet.idExtraType,
+        betInstance.newExtraBet.idTeam,
+        betInstance.newExtraBet.idPlayer,
+        seasonStart
       )
       .then((queryInfo) => {
         if (queryInfo.affectedRows > 0) {

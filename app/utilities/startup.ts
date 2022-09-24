@@ -1,6 +1,6 @@
-import MatchClass, { IMatch } from '../classes/match';
-import TeamClass from '../classes/team';
-const myCache = require('../utilities/cache');
+import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import TeamClass, { ITeamRaw } from '../classes/team';
+import { myCache } from '../utilities/cache';
 
 exports.start = async () => {
   console.log('---------------');
@@ -23,27 +23,34 @@ exports.start = async () => {
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
-    const teamsPromiseReturn = fulfilledValues.find(
+    const allTeamsRaw: ITeamRaw[] = fulfilledValues.find(
       (item) => item.promiseContent === 'teams'
-    );
-    const matchesPromiseReturn = fulfilledValues.find(
+    ).res;
+
+    const allMatchesRaw = fulfilledValues.find(
       (item) => item.promiseContent === 'matches'
+    ).res;
+    const formattedTeams = allTeamsRaw.map((team) =>
+      teamInstance.formatRawTeam(team)
     );
 
-    teamInstance.pushTeams(teamsPromiseReturn.res);
-    myCache.set('teams', teamInstance.teams, 60 * 60 * 24);
-    matchInstance.pushMatchesRaw(matchesPromiseReturn.res);
-    myCache.set('matches', matchInstance.matches, 10);
+    const formattedMatches = allMatchesRaw.map((match: IMatchRaw) =>
+      matchInstance.formatRawMatch(match)
+    );
 
-    const matches = matchInstance.matches;
+    teamInstance.setTeams(formattedTeams);
+    matchInstance.setMatches(formattedMatches);
+    myCache.setTeams(teamInstance.teams);
+    myCache.setMatches(matchInstance.matches);
 
-    const seasonStart = matches.reduce((prev: IMatch, curr: IMatch) =>
-      prev.timestamp <= curr.timestamp ? prev : curr
+    const seasonStart = matchInstance.matches.reduce(
+      (prev: IMatch, curr: IMatch) =>
+        prev.timestamp <= curr.timestamp ? prev : curr
     );
 
     const seasonStartTimestamp =
       new Date(seasonStart.timestamp).getTime() / 1000;
-    myCache.set('seasonStart', seasonStartTimestamp, 60 * 60 * 24);
+    myCache.setSeasonStart(seasonStartTimestamp);
     console.log('Startup complete.');
     console.log('---------------');
   } catch (error: unknown) {

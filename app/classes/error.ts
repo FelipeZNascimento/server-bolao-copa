@@ -15,6 +15,7 @@ class ErrorClass implements IErrorClass {
   result: TResult;
   request: any;
   response: any;
+  status: number;
 
   constructor(
     result: TResult = { errors: [] },
@@ -24,6 +25,7 @@ class ErrorClass implements IErrorClass {
     this.result = result;
     this.request = request;
     this.response = response;
+    this.status = 400;
   }
 
   catchError(error: unknown) {
@@ -50,12 +52,22 @@ class ErrorClass implements IErrorClass {
     this.result.errors = result;
   }
 
-  returnApi() {
+  returnApi(status: number | null = null) {
     if (!this.response) {
       return;
     }
 
-    const responseObject = new ResponseObjectClass(false, this.result);
+    if (status) {
+      this.response.status(status);
+    } else {
+      this.response.status(this.status);
+    }
+    const responseObject = new ResponseObjectClass(
+      false,
+      this.result,
+      this.response.status
+    );
+    this.response.status(this.status);
     return this.response.send(responseObject);
   }
 }

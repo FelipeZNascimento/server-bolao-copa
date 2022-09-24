@@ -1,9 +1,9 @@
-import BetClass from '../classes/bet';
+import BetClass, { IBetRaw } from '../classes/bet';
 import ConfigClass from '../classes/config';
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
-import TeamClass from '../classes/team';
+import TeamClass, { ITeamRaw } from '../classes/team';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
-const myCache = require('../utilities/cache');
+import { myCache } from '../utilities/cache';
 
 exports.default = async (req: any, res: any) => {
   const loggedUser = req.session.user;
@@ -12,12 +12,8 @@ exports.default = async (req: any, res: any) => {
   try {
     const matchInstance = new MatchClass(req, res);
     const teamInstance = new TeamClass(req, res);
-    const betInstance = new BetClass({}, req, res);
 
-    const allQueries = [
-      betInstance.getAll(),
-      betInstance.getFromLoggedUser(loggedUser ? loggedUser.id : null)
-    ];
+    const allQueries = [];
 
     if (!myCache.has('teams')) {
       allQueries.push(
@@ -27,11 +23,11 @@ exports.default = async (req: any, res: any) => {
       );
     }
 
-    if (!myCache.has('matches')) {
+    if (!myCache.has('seasonStart')) {
       allQueries.push(
         matchInstance
-          .getAll()
-          .then((res) => ({ res: res, promiseContent: 'matches' }))
+          .getFirst()
+          .then((res) => ({ res: res, promiseContent: 'firstMatch' }))
       );
     }
 
@@ -52,46 +48,31 @@ exports.default = async (req: any, res: any) => {
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
-    betInstance.pushBets(fulfilledValues[0], false); // All available bets
-    betInstance.pushBets(fulfilledValues[1], true); // All loggedUserBets
-
     if (myCache.has('teams')) {
       teamInstance.setTeams(myCache.get('teams'));
     } else {
-      const promiseReturn = fulfilledValues.find(
+      const allTeamsRaw: ITeamRaw[] = fulfilledValues.find(
         (item) => item.promiseContent === 'teams'
+      ).res;
+      const formattedTeams = allTeamsRaw.map((team) =>
+        teamInstance.formatRawTeam(team)
       );
-      teamInstance.pushTeams(promiseReturn.res);
-      myCache.set('teams', teamInstance.teams, 60 * 60 * 24);
-    }
-
-    const bets = betInstance.bets;
-    const loggedUserBets = betInstance.loggedUserBets;
-
-    if (myCache.has('matches')) {
-      matchInstance.pushMatches(myCache.get('matches'), bets, loggedUserBets);
-    } else {
-      const promiseReturn = fulfilledValues.find(
-        (item) => item.promiseContent === 'matches'
-      );
-      matchInstance.pushMatchesRaw(promiseReturn.res, bets, loggedUserBets);
-      myCache.set('matches', matchInstance.matches, 10);
+      teamInstance.setTeams(formattedTeams);
+      myCache.setTeams(teamInstance.teams);
     }
 
     if (!myCache.has('seasonStart')) {
-      const matches = matchInstance.matches;
+      const firstMatchRaw = fulfilledValues.find(
+        (item) => item.promiseContent === 'firstMatch'
+      ).res;
 
-      const seasonStart = matches.reduce((prev: IMatch, curr: IMatch) =>
-        prev.timestamp <= curr.timestamp ? prev : curr
-      );
-
-      const seasonStartTimestamp =
-        new Date(seasonStart.timestamp).getTime() / 1000;
-      myCache.set('seasonStart', seasonStartTimestamp, 60 * 60 * 24);
+      const formattedFirstMatch = matchInstance.formatRawMatch(firstMatchRaw);
+      const seasonStart = formattedFirstMatch.timestamp;
+      const seasonStartTimestamp = new Date(seasonStart).getTime() / 1000;
+      myCache.setSeasonStart(seasonStartTimestamp);
     }
 
     configInstance.setSeasonStart(myCache.get('seasonStart'));
-    configInstance.setMatches(matchInstance.matches);
     configInstance.setTeams(teamInstance.teams);
     const buildObject = configInstance.buildConfigObject();
     configInstance.success.setResult(buildObject);

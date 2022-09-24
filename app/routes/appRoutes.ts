@@ -3,6 +3,8 @@ import { Express } from 'express';
 const routes = (app: Express) => {
   const betController = require('../controller/bet');
   const configController = require('../controller/config');
+  const matchController = require('../controller/match');
+  const rankingController = require('../controller/ranking');
   const teamController = require('../controller/team');
   const userController = require('../controller/user');
 
@@ -28,6 +30,16 @@ const routes = (app: Express) => {
   // Team Routing
   app.route('/copa2022/team/').get(teamController.listAll);
   app.route('/copa2022/team/:id/').get(teamController.listById);
+
+  // Match Routing
+  app
+    .route('/copa2022/match/userBets/')
+    .get(matchController.listAllWithUserBets);
+  app.route('/copa2022/match/').get(matchController.listAll);
+
+  // Ranking Routing
+  app.route('/copa2022/ranking/').get(rankingController.listAll);
+  app.route('/copa2022/ranking/:round').get(rankingController.listAll);
 
   app.use(function (req, res) {
     res.sendStatus(404);

@@ -4,8 +4,11 @@ exports.listAll = async function (req: any, res: any) {
   const teamInstance = new TeamClass(req, res);
 
   try {
-    await teamInstance.getAll().then((teams: ITeamRaw[]) => {
-      teamInstance.pushTeams(teams);
+    await teamInstance.getAll().then((rawTeams: ITeamRaw[]) => {
+      const formattedTeams = rawTeams.map((team) =>
+        teamInstance.formatRawTeam(team)
+      );
+      teamInstance.setTeams(formattedTeams);
       teamInstance.success.setResult(teamInstance.teams);
       return teamInstance.success.returnApi();
     });
@@ -20,8 +23,11 @@ exports.listById = async function (req: any, res: any) {
   const { id } = req.params;
 
   try {
-    await teamInstance.getById(id).then((teams: ITeamRaw[]) => {
-      teamInstance.pushTeams(teams);
+    await teamInstance.getById(id).then((rawTeams: ITeamRaw[]) => {
+      const formattedTeams = rawTeams.map((team) =>
+        teamInstance.formatRawTeam(team)
+      );
+      teamInstance.setTeams(formattedTeams);
       teamInstance.success.setResult(teamInstance.teams);
       return teamInstance.success.returnApi();
     });

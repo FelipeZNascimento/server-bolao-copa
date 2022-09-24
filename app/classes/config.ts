@@ -49,7 +49,6 @@ class ConfigClass extends QueryMaker {
   buildConfigObject() {
     return {
       loggedUser: this.loggedUser,
-      matches: this.matches,
       seasonStart: this.seasonStart,
       teams: this.teams
     };

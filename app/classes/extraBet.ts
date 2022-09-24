@@ -17,12 +17,20 @@ export interface IExtraBetRaw {
   user_is_active: boolean;
 }
 
+export interface INewExtraBet {
+  id: number | null;
+  idExtraType: number;
+  idPlayer: number | null;
+  idTeam: number | null;
+  idUser: number | null;
+}
+
 export interface IExtraBet {
-  id: number;
+  id: number | null;
   idExtraType: number;
   idPlayer: number | null;
   idTeam?: number | null;
-  idUser?: number | null;
+  idUser: number | null;
   team: ITeam | null;
   timestamp: string;
   user: IUser;
@@ -32,30 +40,17 @@ class ExtraBetClass extends QueryMaker {
   error: ErrorClass;
   success: SuccessClass;
 
-  id: number | null;
-  idExtraType: number | null;
-  idPlayer: number | null;
-  idTeam: number | null;
-  idUser: number | null;
-  team: ITeam | null;
-
+  newExtraBet: INewExtraBet | null;
   extraBets: IExtraBet[];
   loggedUserExtraBets: IExtraBet[];
 
-  constructor(bet: Partial<IExtraBet>, req: any, res: any) {
+  constructor(req?: any, res?: any) {
     super();
 
     this.error = new ErrorClass({ errors: [] }, req, res);
     this.success = new SuccessClass([], req, res);
 
-    this.id = bet.id !== undefined ? Number(bet.id) : null;
-    this.idExtraType =
-      bet.idExtraType !== undefined ? Number(bet.idExtraType) : null;
-    this.idTeam = bet.idTeam !== undefined ? Number(bet.idTeam) : null;
-    this.idPlayer = bet.idPlayer !== undefined ? Number(bet.idPlayer) : null;
-    this.idUser = bet.idUser !== undefined ? Number(bet.idUser) : null;
-    this.team = null;
-
+    this.newExtraBet = null;
     this.extraBets = [];
     this.loggedUserExtraBets = [];
   }
@@ -67,33 +62,34 @@ class ExtraBetClass extends QueryMaker {
     };
   }
 
-  pushBets(
-    betsRaw: IExtraBetRaw[],
-    teams: ITeam[],
-    isLoggedUserBets: boolean = false
-  ) {
-    betsRaw.forEach((betRaw) => {
-      const team = teams && teams.find((item) => item.id === betRaw.id_team);
-      const formattedBet = {
-        id: betRaw.id,
-        timestamp: betRaw.timestamp,
-        idExtraType: betRaw.id_extra_type,
-        idPlayer: betRaw.id_player,
-        user: {
-          id: betRaw.id_user,
-          name: betRaw.user_name,
-          nickname: betRaw.user_nickname,
-          isActive: betRaw.user_is_active
-        },
-        team: team !== undefined ? team : null
-      };
+  setExtraBets(extraBets: IExtraBet[]) {
+    this.extraBets = extraBets;
+  }
 
-      if (isLoggedUserBets) {
-        this.loggedUserExtraBets.push(formattedBet);
-      } else {
-        this.extraBets.push(formattedBet);
-      }
-    });
+  setLoggedUserExtraBets(extraBets: IExtraBet[]) {
+    this.loggedUserExtraBets = extraBets;
+  }
+
+  setNewExtraBet(extraBet: INewExtraBet) {
+    this.newExtraBet = extraBet;
+  }
+
+  formatRawExtraBet(extraBetRaw: IExtraBetRaw, teams: ITeam[]) {
+    const team = teams && teams.find((item) => item.id === extraBetRaw.id_team);
+    return {
+      id: extraBetRaw.id,
+      timestamp: extraBetRaw.timestamp,
+      idExtraType: extraBetRaw.id_extra_type,
+      idPlayer: extraBetRaw.id_player,
+      idUser: extraBetRaw.id_user,
+      user: {
+        id: extraBetRaw.id_user,
+        name: extraBetRaw.user_name,
+        nickname: extraBetRaw.user_nickname,
+        isActive: extraBetRaw.user_is_active
+      },
+      team: team !== undefined ? team : null
+    };
   }
 
   async getAll(seasonStart: number) {
