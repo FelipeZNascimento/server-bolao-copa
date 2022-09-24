@@ -2,14 +2,23 @@ import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 
-export interface IUser {
-  id: number | null;
+export interface IUserRaw {
   email?: string;
+  id_user: number | null;
+  is_active: boolean;
   name?: string;
   nickname: string;
   password?: string | null;
-  newPassword?: string | null;
+}
+
+export interface IUser {
+  email?: string;
+  id: number | null;
   isActive: boolean;
+  name?: string;
+  newPassword?: string | null;
+  nickname: string;
+  password?: string | null;
 }
 
 class UserClass extends QueryMaker {
@@ -46,6 +55,17 @@ class UserClass extends QueryMaker {
     this.name = user.name || this.name;
     this.nickname = user.nickname || this.nickname;
     this.password = user.password || this.password;
+  }
+
+  formatRawUser(users: IUserRaw) {
+    return {
+      email: users.email,
+      id: users.id_user,
+      isActive: users.is_active,
+      name: users.name,
+      nickname: users.nickname,
+      password: users.password
+    };
   }
 
   async checkEmail(email: IUser['email'], id: IUser['id'] | string) {

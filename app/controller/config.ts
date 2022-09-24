@@ -1,7 +1,7 @@
-import BetClass from '../classes/bet';
+import BetClass, { IBetRaw } from '../classes/bet';
 import ConfigClass from '../classes/config';
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
-import TeamClass from '../classes/team';
+import TeamClass, { ITeamRaw } from '../classes/team';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
 const myCache = require('../utilities/cache');
 
@@ -15,8 +15,7 @@ exports.default = async (req: any, res: any) => {
     const betInstance = new BetClass({}, req, res);
 
     const allQueries = [
-      betInstance.getAll(),
-      betInstance.getFromLoggedUser(loggedUser ? loggedUser.id : null)
+      betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
     ];
 
     if (!myCache.has('teams')) {
@@ -52,29 +51,47 @@ exports.default = async (req: any, res: any) => {
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
-    betInstance.pushBets(fulfilledValues[0], false); // All available bets
-    betInstance.pushBets(fulfilledValues[1], true); // All loggedUserBets
+    const allRawBets = fulfilledValues.find(
+      (item) => item.promiseContent === 'bets'
+    ).res;
+
+    const allBets = allRawBets.map((bet: IBetRaw) =>
+      betInstance.formatRawBet(bet)
+    );
+    betInstance.setBets(allBets);
 
     if (myCache.has('teams')) {
       teamInstance.setTeams(myCache.get('teams'));
     } else {
-      const promiseReturn = fulfilledValues.find(
+      const allTeamsRaw: ITeamRaw[] = fulfilledValues.find(
         (item) => item.promiseContent === 'teams'
+      ).res;
+      const formattedTeams = allTeamsRaw.map((team) =>
+        teamInstance.formatRawTeam(team)
       );
-      teamInstance.pushTeams(promiseReturn.res);
+      teamInstance.setTeams(formattedTeams);
       myCache.set('teams', teamInstance.teams, 60 * 60 * 24);
     }
 
-    const bets = betInstance.bets;
-    const loggedUserBets = betInstance.loggedUserBets;
-
     if (myCache.has('matches')) {
-      matchInstance.pushMatches(myCache.get('matches'), bets, loggedUserBets);
-    } else {
-      const promiseReturn = fulfilledValues.find(
-        (item) => item.promiseContent === 'matches'
+      const mergedMatches = matchInstance.mergeBets(
+        myCache.get('matches'),
+        betInstance.bets
       );
-      matchInstance.pushMatchesRaw(promiseReturn.res, bets, loggedUserBets);
+      matchInstance.setMatches(mergedMatches);
+    } else {
+      const allRawMatches = fulfilledValues.find(
+        (item) => item.promiseContent === 'matches'
+      ).res;
+      const allMatches = allRawMatches.map((match: IMatchRaw) =>
+        matchInstance.formatRawMatch(match)
+      );
+
+      const mergedMatches = matchInstance.mergeBets(
+        allMatches,
+        betInstance.bets
+      );
+      matchInstance.setMatches(mergedMatches);
       myCache.set('matches', matchInstance.matches, 10);
     }
 

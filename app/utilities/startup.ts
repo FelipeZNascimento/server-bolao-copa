@@ -1,5 +1,5 @@
-import MatchClass, { IMatch } from '../classes/match';
-import TeamClass from '../classes/team';
+import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import TeamClass, { ITeamRaw } from '../classes/team';
 const myCache = require('../utilities/cache');
 
 exports.start = async () => {
@@ -23,22 +23,29 @@ exports.start = async () => {
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
-    const teamsPromiseReturn = fulfilledValues.find(
+    const allTeamsRaw: ITeamRaw[] = fulfilledValues.find(
       (item) => item.promiseContent === 'teams'
-    );
-    const matchesPromiseReturn = fulfilledValues.find(
+    ).res;
+
+    const allMatchesRaw = fulfilledValues.find(
       (item) => item.promiseContent === 'matches'
+    ).res;
+    const formattedTeams = allTeamsRaw.map((team) =>
+      teamInstance.formatRawTeam(team)
     );
 
-    teamInstance.pushTeams(teamsPromiseReturn.res);
+    const formattedMatches = allMatchesRaw.map((match: IMatchRaw) =>
+      matchInstance.formatRawMatch(match)
+    );
+
+    teamInstance.setTeams(formattedTeams);
+    matchInstance.setMatches(formattedMatches);
     myCache.set('teams', teamInstance.teams, 60 * 60 * 24);
-    matchInstance.pushMatchesRaw(matchesPromiseReturn.res);
     myCache.set('matches', matchInstance.matches, 10);
 
-    const matches = matchInstance.matches;
-
-    const seasonStart = matches.reduce((prev: IMatch, curr: IMatch) =>
-      prev.timestamp <= curr.timestamp ? prev : curr
+    const seasonStart = matchInstance.matches.reduce(
+      (prev: IMatch, curr: IMatch) =>
+        prev.timestamp <= curr.timestamp ? prev : curr
     );
 
     const seasonStartTimestamp =

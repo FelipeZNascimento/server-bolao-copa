@@ -58,29 +58,25 @@ class TeamClass extends QueryMaker {
     this.teams = teams;
   }
 
-  pushTeams(teamsRaw: ITeamRaw[]) {
-    teamsRaw.forEach((matchRaw: ITeamRaw) => {
-      const formattedTeam: ITeam = {
-        id: matchRaw.id,
-        isoCode: matchRaw.iso_code,
-        goals: null,
-        penalties: null,
-        name: matchRaw.name,
-        nameEn: matchRaw.name_en,
-        abbreviation: matchRaw.abbreviation,
-        abbreviationEn: matchRaw.abbreviation_en,
-        group: matchRaw.group,
-        colors: matchRaw.colors === null ? [] : matchRaw.colors.split(','),
-        confederation: {
-          id: matchRaw.confederation_id,
-          abbreviation: matchRaw.confederation_abbreviation,
-          name: matchRaw.confederation_name,
-          nameEn: matchRaw.confederation_name_en
-        }
-      };
-
-      this.teams.push(formattedTeam);
-    });
+  formatRawTeam(teamRaw: ITeamRaw) {
+    return {
+      id: teamRaw.id,
+      isoCode: teamRaw.iso_code,
+      goals: null,
+      penalties: null,
+      name: teamRaw.name,
+      nameEn: teamRaw.name_en,
+      abbreviation: teamRaw.abbreviation,
+      abbreviationEn: teamRaw.abbreviation_en,
+      group: teamRaw.group,
+      colors: teamRaw.colors === null ? [] : teamRaw.colors.split(','),
+      confederation: {
+        id: teamRaw.confederation_id,
+        abbreviation: teamRaw.confederation_abbreviation,
+        name: teamRaw.confederation_name,
+        nameEn: teamRaw.confederation_name_en
+      }
+    };
   }
 
   async getAll() {

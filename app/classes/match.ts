@@ -119,142 +119,95 @@ class MatchClass extends QueryMaker {
     this.matchesByRound = [];
   }
 
-  setMatches(matches: IMatch[]) {
-    this.matches = matches;
-  }
-
-  pushMatchesRaw(
-    matchesRaw: IMatchRaw[],
-    bets: IBet[] = [],
-    loggedUserBets: IBet[] = []
-  ) {
-    matchesRaw.forEach((matchRaw: IMatchRaw) => {
-      const matchBets = bets.filter((bet) => bet.idMatch === matchRaw.id);
-      const matchLoggedUserBets = loggedUserBets.filter(
-        (bet) => bet.idMatch === matchRaw.id
-      );
-
-      const formattedMatch: IMatch = {
-        id: matchRaw.id,
-        timestamp: matchRaw.timestamp,
-        round: matchRaw.round,
-        status: matchRaw.status,
-        bets: matchBets,
-        loggedUserBets:
-          matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null,
-        homeTeam: {
-          id: matchRaw.home_id,
-          isoCode: matchRaw.home_iso_code,
-          name: matchRaw.home_name,
-          nameEn: matchRaw.home_name_en,
-          abbreviation: matchRaw.home_name_abbreviation,
-          abbreviationEn: matchRaw.home_name_abbreviation_en,
-          colors:
-            matchRaw.home_team_colors === null
-              ? []
-              : matchRaw.home_team_colors.split(','),
-          goals: matchRaw.goals_home,
-          penalties: matchRaw.penalties_home,
-          group: matchRaw.home_group,
-          confederation: {
-            id: matchRaw.home_confederation_id,
-            abbreviation: matchRaw.home_confederation_abbreviation,
-            name: matchRaw.home_confederation_name,
-            nameEn: matchRaw.home_confederation_name_en
-          }
-        },
-        awayTeam: {
-          id: matchRaw.away_id,
-          isoCode: matchRaw.away_iso_code,
-          name: matchRaw.away_name,
-          nameEn: matchRaw.away_name_en,
-          abbreviation: matchRaw.away_name_abbreviation,
-          abbreviationEn: matchRaw.away_name_abbreviation_en,
-          colors:
-            matchRaw.away_team_colors === null
-              ? []
-              : matchRaw.away_team_colors.split(','),
-          goals: matchRaw.goals_away,
-          penalties: matchRaw.penalties_away,
-          group: matchRaw.away_group,
-          confederation: {
-            id: matchRaw.away_confederation_id,
-            abbreviation: matchRaw.away_confederation_abbreviation,
-            name: matchRaw.away_confederation_name,
-            nameEn: matchRaw.away_confederation_name_en
-          }
-        },
-        referee: {
-          id: matchRaw.id_referee,
-          name: matchRaw.referee_name,
-          birth: matchRaw.referee_birth,
-          country: {
-            id: matchRaw.referee_id_country,
-            abbreviation: matchRaw.referee_country_abbreviation,
-            name: matchRaw.referee_country_name,
-            nameEn: matchRaw.referee_country_name_en
-          }
-        },
-        stadium: {
-          id: matchRaw.id_stadium,
-          name: matchRaw.stadium_name,
-          city: matchRaw.stadium_city,
-          capacity: matchRaw.stadium_capacity,
-          latitude: matchRaw.stadium_geo_latitude,
-          longitude: matchRaw.stadium_geo_longitude
+  formatRawMatch(matchRaw: IMatchRaw) {
+    return {
+      id: matchRaw.id,
+      timestamp: matchRaw.timestamp,
+      round: matchRaw.round,
+      status: matchRaw.status,
+      bets: [],
+      loggedUserBets: null,
+      homeTeam: {
+        id: matchRaw.home_id,
+        isoCode: matchRaw.home_iso_code,
+        name: matchRaw.home_name,
+        nameEn: matchRaw.home_name_en,
+        abbreviation: matchRaw.home_name_abbreviation,
+        abbreviationEn: matchRaw.home_name_abbreviation_en,
+        colors:
+          matchRaw.home_team_colors === null
+            ? []
+            : matchRaw.home_team_colors.split(','),
+        goals: matchRaw.goals_home,
+        penalties: matchRaw.penalties_home,
+        group: matchRaw.home_group,
+        confederation: {
+          id: matchRaw.home_confederation_id,
+          abbreviation: matchRaw.home_confederation_abbreviation,
+          name: matchRaw.home_confederation_name,
+          nameEn: matchRaw.home_confederation_name_en
         }
-      };
-
-      this.matches.push(formattedMatch);
-
-      const round = this.matchesByRound.find(
-        (matchByRound) => matchByRound.round === formattedMatch.round
-      );
-
-      if (round) {
-        round.matches.push(formattedMatch);
-      } else {
-        this.matchesByRound.push({
-          round: formattedMatch.round,
-          matches: [formattedMatch]
-        });
+      },
+      awayTeam: {
+        id: matchRaw.away_id,
+        isoCode: matchRaw.away_iso_code,
+        name: matchRaw.away_name,
+        nameEn: matchRaw.away_name_en,
+        abbreviation: matchRaw.away_name_abbreviation,
+        abbreviationEn: matchRaw.away_name_abbreviation_en,
+        colors:
+          matchRaw.away_team_colors === null
+            ? []
+            : matchRaw.away_team_colors.split(','),
+        goals: matchRaw.goals_away,
+        penalties: matchRaw.penalties_away,
+        group: matchRaw.away_group,
+        confederation: {
+          id: matchRaw.away_confederation_id,
+          abbreviation: matchRaw.away_confederation_abbreviation,
+          name: matchRaw.away_confederation_name,
+          nameEn: matchRaw.away_confederation_name_en
+        }
+      },
+      referee: {
+        id: matchRaw.id_referee,
+        name: matchRaw.referee_name,
+        birth: matchRaw.referee_birth,
+        country: {
+          id: matchRaw.referee_id_country,
+          abbreviation: matchRaw.referee_country_abbreviation,
+          name: matchRaw.referee_country_name,
+          nameEn: matchRaw.referee_country_name_en
+        }
+      },
+      stadium: {
+        id: matchRaw.id_stadium,
+        name: matchRaw.stadium_name,
+        city: matchRaw.stadium_city,
+        capacity: matchRaw.stadium_capacity,
+        latitude: matchRaw.stadium_geo_latitude,
+        longitude: matchRaw.stadium_geo_longitude
       }
-    });
+    };
   }
 
-  pushMatches(
-    matches: IMatch[],
-    bets: IBet[] = [],
-    loggedUserBets: IBet[] = []
-  ) {
-    matches.forEach((match: IMatch) => {
+  mergeBets(matches: IMatch[], bets: IBet[] = [], loggedUserBets: IBet[] = []) {
+    matches.forEach((match) => {
       const matchBets = bets.filter((bet) => bet.idMatch === match.id);
       const matchLoggedUserBets = loggedUserBets.filter(
         (bet) => bet.idMatch === match.id
       );
 
-      const formattedMatch: IMatch = {
-        ...match,
-        bets: matchBets,
-        loggedUserBets:
-          matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null
-      };
-
-      this.matches.push(formattedMatch);
-
-      const round = this.matchesByRound.find(
-        (matchByRound) => matchByRound.round === formattedMatch.round
-      );
-
-      if (round) {
-        round.matches.push(formattedMatch);
-      } else {
-        this.matchesByRound.push({
-          round: formattedMatch.round,
-          matches: [formattedMatch]
-        });
-      }
+      match.bets = matchBets;
+      match.loggedUserBets =
+        matchLoggedUserBets.length > 0 ? matchLoggedUserBets[0] : null;
     });
+
+    return matches;
+  }
+
+  setMatches(matches: IMatch[]) {
+    this.matches = matches;
   }
 
   async getAll() {
