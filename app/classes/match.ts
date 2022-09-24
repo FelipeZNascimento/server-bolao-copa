@@ -210,6 +210,12 @@ class MatchClass extends QueryMaker {
     this.matches = matches;
   }
 
+  async getFirst() {
+    return super.runQuery(
+      `SELECT timestamp FROM matches ORDER BY timestamp ASC LIMIT 1`
+    );
+  }
+
   async getAll() {
     return super.runQuery(
       `SELECT matches.id, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,

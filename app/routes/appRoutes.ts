@@ -34,7 +34,8 @@ const routes = (app: Express) => {
   // Match Routing
   app
     .route('/copa2022/match/userBets/')
-    .get(matchController.listAllMatchesWithUserBets);
+    .get(matchController.listAllWithUserBets);
+  app.route('/copa2022/match/').get(matchController.listAll);
 
   // Ranking Routing
   app.route('/copa2022/ranking/').get(rankingController.listAll);
