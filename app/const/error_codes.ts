@@ -44,6 +44,10 @@ const BET_ERRORS = {
     code: `${BETS_RELATED}1`,
     message: 'Pedido inválido (mismatched params).'
   },
+  NOT_ALLOWED: {
+    code: `${BETS_RELATED}2`,
+    message: 'Pedido não permitido.'
+  },
   BET_UNKNOWN: {
     code: `${BETS_RELATED}9`,
     message: 'Erro desconhecido.'
@@ -55,8 +59,12 @@ export const ERROR_CODES = {
     code: `${GENERAL}1`,
     message: 'Pedido inválido (missing params).'
   },
-  GENERAL_UNKNOWN: {
+  CACHE_ERROR: {
     code: `${GENERAL}2`,
+    message: 'Erro na cache.'
+  },
+  GENERAL_UNKNOWN: {
+    code: `${GENERAL}9`,
     message: 'Erro desconhecido.'
   },
   ...USER_ERRORS,

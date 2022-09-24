@@ -1,6 +1,6 @@
 import ErrorClass from '../classes/error';
 import SuccessClass from '../classes/success';
-import UserClass, { IUser } from '../classes/user';
+import UserClass, { IUser, IUserRaw } from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 
 const checkExistingValues = async (userInstance: UserClass) => {
@@ -40,8 +40,9 @@ exports.listAll = async function (req: any, res: any) {
   const userInstance = new UserClass({}, req, res);
 
   try {
-    await userInstance.getAll().then((users: IUser[]) => {
-      userInstance.success.setResult(users);
+    await userInstance.getAll().then((users: IUserRaw[]) => {
+      const formattedUsers = users.map((user) => userInstance.formatRawUser(user));
+      userInstance.success.setResult(formattedUsers);
       return userInstance.success.returnApi();
     });
   } catch (error) {
@@ -120,7 +121,7 @@ exports.login = async function (req: any, res: any) {
 
   if (req.session.user) {
     userInstance.error.setResult([ERROR_CODES.USER_EXISTING]);
-    return userInstance.error.returnApi();
+    return userInstance.error.returnApi(403);
   }
 
   try {
@@ -167,7 +168,7 @@ exports.updateInfo = async function (req: any, res: any) {
   const userInstance = new UserClass(req.body, req, res);
   if (!req.session.user) {
     userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
-    return userInstance.error.returnApi();
+    return userInstance.error.returnApi(401);
   }
 
   if (!userInstance.id || !userInstance.nickname || !userInstance.name) {
@@ -179,7 +180,7 @@ exports.updateInfo = async function (req: any, res: any) {
 
     if (checkResult.result.errors.length > 0) {
       userInstance.error.setResult(checkResult.result.errors);
-      return userInstance.error.returnApi();
+      return userInstance.error.returnApi(403);
     }
 
     await userInstance
@@ -214,7 +215,7 @@ exports.updatePassword = async function (req: any, res: any) {
   const userInstance = new UserClass(req.body, req, res);
   if (!req.session.user) {
     userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
-    return userInstance.error.returnApi();
+    return userInstance.error.returnApi(401);
   }
 
   if (!userInstance.id || !userInstance.password || !userInstance.newPassword) {
@@ -227,7 +228,7 @@ exports.updatePassword = async function (req: any, res: any) {
 
     if (checkResult.result.errors.length > 0) {
       userInstance.error.setResult(checkResult.result.errors);
-      return userInstance.error.returnApi();
+      return userInstance.error.returnApi(403);
     }
 
     await userInstance
@@ -250,7 +251,7 @@ exports.updatePassword = async function (req: any, res: any) {
           return userInstance.success.returnApi();
         } else {
           userInstance.error.setResult([ERROR_CODES.USER_WRONG_PASSWORD]);
-          return userInstance.error.returnApi();
+          return userInstance.error.returnApi(403);
         }
       });
   } catch (error) {
