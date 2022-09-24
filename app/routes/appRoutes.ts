@@ -38,7 +38,7 @@ const routes = (app: Express) => {
 
   // Ranking Routing
   app.route('/copa2022/ranking/').get(rankingController.listAll);
-  app.route('/copa2022/ranking/:week').get(rankingController.listAll);
+  app.route('/copa2022/ranking/:round').get(rankingController.listAll);
 
   app.use(function (req, res) {
     res.sendStatus(404);

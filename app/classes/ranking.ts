@@ -61,8 +61,6 @@ class RankingClass extends QueryMaker {
       half: 0,
       minimun: 0
     };
-    console.log(`match: ${match.homeTeam.goals} x ${match.awayTeam.goals} `);
-    console.log(`bet: ${bet.goalsHome} x ${bet.goalsAway}`);
 
     if (
       match.awayTeam.goals !== null &&
@@ -70,7 +68,6 @@ class RankingClass extends QueryMaker {
       bet.goalsAway !== null &&
       bet.goalsHome !== null
     ) {
-      console.log('valid goals');
       // valid goals
       if (
         (bet.goalsAway > bet.goalsHome &&
@@ -104,15 +101,12 @@ class RankingClass extends QueryMaker {
         bet.goalsAway === bet.goalsHome &&
         match.awayTeam.goals === match.homeTeam.goals
       ) {
-        console.log('draw');
         // Acertou empate
         if (bet.goalsAway === match.awayTeam.goals) {
-          console.log('draw na mosca');
           // na mosca
           calculationObject.points = 5;
           calculationObject.full++;
         } else {
-          console.log('draw nope');
           // não acertou placar
           calculationObject.points = 2;
           calculationObject.minimun++;
@@ -124,11 +118,6 @@ class RankingClass extends QueryMaker {
   }
 
   buildRanking(allMatches: IMatch[]) {
-    // console.log(this.ranking.users);
-    // console.log(allMatches[0].bets);
-    // console.log(
-    //   allMatches[0].bets.find((bet) => bet.user.id === this.ranking.users[0].id)
-    // );
     this.ranking.users.forEach((user) => {
       allMatches.forEach((match) => {
         const userBet = match.bets.find((bet) => bet.user.id === user.id);
@@ -141,6 +130,15 @@ class RankingClass extends QueryMaker {
         }
       });
     });
+
+    this.ranking.users.sort(
+      (a, b) =>
+        b.points - a.points ||
+        b.full - a.full ||
+        b.half - a.half ||
+        b.minimun - a.minimun ||
+        a.nickname.localeCompare(b.nickname)
+    );
   }
 }
 
