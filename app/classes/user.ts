@@ -9,6 +9,7 @@ export interface IUserRaw {
   name?: string;
   nickname: string;
   password?: string | null;
+  last_timestamp: number;
 }
 
 export interface IUser {
@@ -48,15 +49,6 @@ class UserClass extends QueryMaker {
     this.newPassword = user.newPassword || null;
   }
 
-  replaceProperties(user: Partial<IUser>) {
-    this.email = user.email || this.email;
-    this.id = user.id || this.id;
-    this.isActive = user.isActive || this.isActive;
-    this.name = user.name || this.name;
-    this.nickname = user.nickname || this.nickname;
-    this.password = user.password || this.password;
-  }
-
   formatRawUser(users: IUserRaw) {
     return {
       email: users.email,
@@ -64,7 +56,8 @@ class UserClass extends QueryMaker {
       isActive: users.is_active,
       name: users.name,
       nickname: users.nickname,
-      password: users.password
+      password: users.password,
+      lastTimestamp: users.last_timestamp
     };
   }
 
@@ -84,8 +77,9 @@ class UserClass extends QueryMaker {
 
   async getAll() {
     return super.runQuery(
-      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active
-              FROM users_info`
+      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active,
+        UNIX_TIMESTAMP(last_timestamp) as last_timestamp
+        FROM users_info`
     );
   }
 
@@ -139,6 +133,15 @@ class UserClass extends QueryMaker {
         nickname = ?
         WHERE id_user = ?`,
       [name, nickname, id]
+    );
+  }
+
+  async updateTimestamp(id: IUser['id']) {
+    return super.runQuery(
+      `UPDATE users_info
+        SET last_timestamp = NOW()
+        WHERE id_user = ?`,
+      [id]
     );
   }
 

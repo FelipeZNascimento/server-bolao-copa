@@ -6,6 +6,7 @@ import { IBet } from './bet';
 import { IMatch } from './match';
 
 export interface IUserRanking extends IUser {
+  position: number;
   points: number;
   full: number;
   half: number;
@@ -41,6 +42,7 @@ class RankingClass extends QueryMaker {
     const rankingUsers = users.map((user) => {
       return {
         ...user,
+        position: 1,
         points: 0,
         full: 0,
         half: 0,
@@ -139,6 +141,28 @@ class RankingClass extends QueryMaker {
         b.minimun - a.minimun ||
         a.nickname.localeCompare(b.nickname)
     );
+
+    let currentPosition: number;
+    let lastCheckedUser: IUserRanking | null = null;
+    this.ranking.users.forEach((item) => {
+      if (lastCheckedUser === null) {
+        currentPosition = 1;
+      } else {
+        currentPosition++;
+        if (
+          item.points < lastCheckedUser.points ||
+          item.full < lastCheckedUser.full ||
+          item.half < lastCheckedUser.half ||
+          item.minimun < lastCheckedUser.minimun
+        ) {
+          item.position = currentPosition;
+        } else {
+          item.position = lastCheckedUser.position;
+        }
+      }
+
+      lastCheckedUser = item;
+    });
   }
 }
 

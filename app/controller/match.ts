@@ -1,6 +1,7 @@
 import BetClass, { IBetRaw } from '../classes/bet';
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
 import TeamClass, { ITeamRaw } from '../classes/team';
+import UserClass from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 
@@ -8,6 +9,11 @@ exports.listAll = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
   const teamInstance = new TeamClass(req, res);
   const betInstance = new BetClass({}, req, res);
+  const userInstance = new UserClass({}, req, res);
+  const loggedUser = req.session.user;
+  if (loggedUser) {
+    userInstance.updateTimestamp(loggedUser.id);
+  }
   try {
     const allQueries = [
       betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
@@ -26,6 +32,14 @@ exports.listAll = async (req: any, res: any) => {
         matchInstance
           .getAll()
           .then((res) => ({ res: res, promiseContent: 'matches' }))
+      );
+    }
+
+    if (loggedUser) {
+      allQueries.push(
+        betInstance
+          .getFromLoggedUser(loggedUser.id)
+          .then((res) => ({ res: res, promiseContent: 'userBets' }))
       );
     }
 
@@ -50,6 +64,19 @@ exports.listAll = async (req: any, res: any) => {
       (item) => item.promiseContent === 'bets'
     ).res;
 
+    if (loggedUser) {
+      const allRawUserBets = fulfilledValues.find(
+        (item) => item.promiseContent === 'userBets'
+      ).res;
+
+      const allUserBets = allRawUserBets.map((bet: IBetRaw) =>
+        betInstance.formatRawBet(bet)
+      );
+
+      betInstance.setLoggedUserBets(allUserBets);
+      betInstance.loggedUserBets;
+    }
+
     const allBets = allRawBets.map((bet: IBetRaw) =>
       betInstance.formatRawBet(bet)
     );
@@ -72,7 +99,8 @@ exports.listAll = async (req: any, res: any) => {
     if (myCache.has('matches')) {
       const mergedMatches = matchInstance.mergeBets(
         myCache.get('matches'),
-        betInstance.bets
+        betInstance.bets,
+        betInstance.loggedUserBets
       );
       matchInstance.setMatches(mergedMatches);
     } else {
@@ -85,7 +113,8 @@ exports.listAll = async (req: any, res: any) => {
 
       const mergedMatches = matchInstance.mergeBets(
         allMatches,
-        betInstance.bets
+        betInstance.bets,
+        betInstance.loggedUserBets
       );
       matchInstance.setMatches(mergedMatches);
       myCache.setMatches(matchInstance.matches);
@@ -98,15 +127,19 @@ exports.listAll = async (req: any, res: any) => {
     return matchInstance.error.returnApi();
   }
 };
+
 exports.listAllWithUserBets = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
   const teamInstance = new TeamClass(req, res);
   const betInstance = new BetClass({}, req, res);
+  const userInstance = new UserClass({}, req, res);
 
   const loggedUser = req.session.user;
   if (!loggedUser) {
     matchInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
     return matchInstance.error.returnApi(401);
+  } else {
+    userInstance.updateTimestamp(loggedUser.id);
   }
   try {
     const allQueries = [

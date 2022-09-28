@@ -1,4 +1,4 @@
-import TeamClass, { ITeam, ITeamRaw } from '../classes/team';
+import TeamClass, { ITeamRaw } from '../classes/team';
 
 exports.listAll = async function (req: any, res: any) {
   const teamInstance = new TeamClass(req, res);

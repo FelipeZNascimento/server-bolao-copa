@@ -2,13 +2,18 @@ import BetClass, { IBetRaw } from '../classes/bet';
 import ConfigClass from '../classes/config';
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
 import TeamClass, { ITeamRaw } from '../classes/team';
+import UserClass from '../classes/user';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 
 exports.default = async (req: any, res: any) => {
   const loggedUser = req.session.user;
   const configInstance = new ConfigClass(req, res);
+  const userInstance = new UserClass({}, req, res);
   configInstance.setLoggedUser(loggedUser);
+  if (loggedUser) {
+    userInstance.updateTimestamp(loggedUser.id);
+  }
   try {
     const matchInstance = new MatchClass(req, res);
     const teamInstance = new TeamClass(req, res);

@@ -3,9 +3,11 @@ import { myCache } from '../utilities/cache';
 import BetClass from '../classes/bet';
 import ExtraBetClass, { IExtraBetRaw } from '../classes/extraBet';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import UserClass from '../classes/user';
 
 exports.update = async (req: any, res: any) => {
   const betInstance = new BetClass(req.body, req, res);
+  const userInstance = new UserClass({}, req, res);
 
   if (
     !req.session.user ||
@@ -29,6 +31,8 @@ exports.update = async (req: any, res: any) => {
     betInstance.error.setResult([ERROR_CODES.BAD_PARAMS]);
     return betInstance.error.returnApi(401);
   }
+
+  userInstance.updateTimestamp(betInstance.idUser);
 
   try {
     await betInstance
@@ -54,10 +58,11 @@ exports.update = async (req: any, res: any) => {
 
 exports.listAllExtras = async (req: any, res: any) => {
   const extraBetInstance = new ExtraBetClass(req, res);
+  const userInstance = new UserClass({}, req, res);
   const loggedUser = req.session.user;
   const seasonStartTimestamp = myCache.get('seasonStart');
   const teams = myCache.get('teams');
-
+  userInstance.updateTimestamp(loggedUser.id);
   try {
     const allQueries = [
       extraBetInstance
@@ -115,13 +120,15 @@ exports.listAllExtras = async (req: any, res: any) => {
 
 exports.updateExtra = async (req: any, res: any) => {
   const betInstance = new ExtraBetClass(req, res);
+  const userInstance = new UserClass({}, req, res);
   betInstance.setNewExtraBet(req.body);
+  const loggedUser = req.session.user;
 
   if (
-    !req.session.user ||
+    !loggedUser ||
     betInstance.newExtraBet === null ||
     betInstance.newExtraBet.idUser === null ||
-    betInstance.newExtraBet.idUser !== req.session.user.id
+    betInstance.newExtraBet.idUser !== loggedUser.id
   ) {
     betInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
     return betInstance.error.returnApi(401);
@@ -142,6 +149,7 @@ exports.updateExtra = async (req: any, res: any) => {
   }
 
   const seasonStart = myCache.get('seasonStart');
+  userInstance.updateTimestamp(loggedUser.id);
 
   try {
     await betInstance
