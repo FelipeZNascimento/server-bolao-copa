@@ -11,8 +11,11 @@ exports.listAll = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
   const rankingInstance = new RankingClass(req, res);
   const userInstance = new UserClass({}, req, res);
-
   const loggedUser = req.session.user;
+  if (loggedUser) {
+    userInstance.updateTimestamp(loggedUser.id);
+  }
+
   try {
     const allQueries = [
       userInstance
