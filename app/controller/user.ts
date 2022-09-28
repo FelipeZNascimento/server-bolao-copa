@@ -41,7 +41,9 @@ exports.listAll = async function (req: any, res: any) {
 
   try {
     await userInstance.getAll().then((users: IUserRaw[]) => {
-      const formattedUsers = users.map((user) => userInstance.formatRawUser(user));
+      const formattedUsers = users.map((user) =>
+        userInstance.formatRawUser(user)
+      );
       userInstance.success.setResult(formattedUsers);
       return userInstance.success.returnApi();
     });
@@ -97,12 +99,10 @@ exports.register = async function register(req: any, res: any) {
               .then((loginResult: IUser[]) => {
                 if (loginResult.length > 0) {
                   const newUser = loginResult[0];
-                  userInstance.replaceProperties(newUser);
                   req.session.user = newUser;
-                  userInstance.success.setResult([newUser]);
+                  userInstance.success.setResult({ loggedUser: newUser });
+                  userInstance.updateTimestamp(newUser.id);
                   return userInstance.success.returnApi();
-
-                  // User.updateLastOnlineTime(newUser.id);
                 } else {
                   userInstance.error.pushResult(ERROR_CODES.USER_UNKNOWN);
                   return userInstance.error.returnApi();
@@ -129,14 +129,15 @@ exports.login = async function (req: any, res: any) {
       userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
       return userInstance.error.returnApi();
     }
+
     await userInstance
       .login(userInstance.email, userInstance.password)
       .then((loginResult: IUser[]) => {
         if (loginResult.length > 0) {
           const newUser = loginResult[0];
-          userInstance.replaceProperties(newUser);
           req.session.user = newUser;
           userInstance.success.setResult({ loggedUser: newUser });
+          userInstance.updateTimestamp(newUser.id);
           return userInstance.success.returnApi();
         } else {
           userInstance.error.pushResult(ERROR_CODES.USER_WRONG_CREDENTIALS);
@@ -213,7 +214,8 @@ exports.updateInfo = async function (req: any, res: any) {
 
 exports.updatePassword = async function (req: any, res: any) {
   const userInstance = new UserClass(req.body, req, res);
-  if (!req.session.user) {
+  const loggedUser = req.session.user;
+  if (!loggedUser) {
     userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
     return userInstance.error.returnApi(401);
   }
@@ -223,6 +225,7 @@ exports.updatePassword = async function (req: any, res: any) {
     return userInstance.error.returnApi();
   }
 
+  userInstance.updateTimestamp(loggedUser.id);
   try {
     const checkResult: ErrorClass = await checkExistingValues(userInstance);
 
