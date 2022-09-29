@@ -119,57 +119,62 @@ exports.listAllExtras = async (req: any, res: any) => {
 };
 
 exports.updateExtra = async (req: any, res: any) => {
-  const betInstance = new ExtraBetClass(req, res);
+  const extraBetInstance = new ExtraBetClass(req, res);
   const userInstance = new UserClass({}, req, res);
-  betInstance.setNewExtraBet(req.body);
+  extraBetInstance.setNewExtraBet(req.body);
   const loggedUser = req.session.user;
+  const currentTimestamp = Math.floor(Date.now() / 1000);
 
   if (
     !loggedUser ||
-    betInstance.newExtraBet === null ||
-    betInstance.newExtraBet.idUser === null ||
-    betInstance.newExtraBet.idUser !== loggedUser.id
+    extraBetInstance.newExtraBet === null ||
+    extraBetInstance.newExtraBet.idUser === null ||
+    extraBetInstance.newExtraBet.idUser !== loggedUser.id
   ) {
-    betInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
-    return betInstance.error.returnApi(401);
+    extraBetInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+    return extraBetInstance.error.returnApi(401);
   }
 
   if (
-    betInstance.newExtraBet.idExtraType === null ||
-    (betInstance.newExtraBet.idPlayer === null &&
-      betInstance.newExtraBet.idTeam === null)
+    extraBetInstance.newExtraBet.idExtraType === null ||
+    (extraBetInstance.newExtraBet.idPlayer === null &&
+      extraBetInstance.newExtraBet.idTeam === null)
   ) {
-    betInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
-    return betInstance.error.returnApi();
+    extraBetInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+    return extraBetInstance.error.returnApi();
   }
 
   if (!myCache.has('seasonStart')) {
-    betInstance.error.setResult([ERROR_CODES.CACHE_ERROR]);
-    return betInstance.error.returnApi();
+    extraBetInstance.error.setResult([ERROR_CODES.CACHE_ERROR]);
+    return extraBetInstance.error.returnApi();
+  }
+  const seasonStart = myCache.get('seasonStart');
+
+  if (currentTimestamp > seasonStart) {
+    extraBetInstance.error.setResult([ERROR_CODES.NOT_ALLOWED]);
+    return extraBetInstance.error.returnApi();
   }
 
-  const seasonStart = myCache.get('seasonStart');
   userInstance.updateTimestamp(loggedUser.id);
-
   try {
-    await betInstance
+    await extraBetInstance
       .update(
-        betInstance.newExtraBet.idUser,
-        betInstance.newExtraBet.idExtraType,
-        betInstance.newExtraBet.idTeam,
-        betInstance.newExtraBet.idPlayer,
+        extraBetInstance.newExtraBet.idUser,
+        extraBetInstance.newExtraBet.idExtraType,
+        extraBetInstance.newExtraBet.idTeam,
+        extraBetInstance.newExtraBet.idPlayer,
         seasonStart
       )
       .then((queryInfo) => {
         if (queryInfo.affectedRows > 0) {
-          return betInstance.success.returnApi();
+          return extraBetInstance.success.returnApi();
         } else {
-          betInstance.error.setResult([ERROR_CODES.BAD_PARAMS]);
-          return betInstance.error.returnApi();
+          extraBetInstance.error.setResult([ERROR_CODES.BAD_PARAMS]);
+          return extraBetInstance.error.returnApi();
         }
       });
   } catch (error: unknown) {
-    betInstance.error.catchError(error);
-    return betInstance.error.returnApi();
+    extraBetInstance.error.catchError(error);
+    return extraBetInstance.error.returnApi();
   }
 };
