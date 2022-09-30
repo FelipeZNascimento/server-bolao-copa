@@ -54,6 +54,7 @@ const sessionSettings = {
     sameSite: false,
     secure: true
   },
+  name: 'omegafoxBolaCopa2022',
   resave: true,
   rolling: true,
   saveUninitialized: false,
