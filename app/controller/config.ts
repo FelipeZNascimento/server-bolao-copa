@@ -1,6 +1,5 @@
-import BetClass, { IBetRaw } from '../classes/bet';
 import ConfigClass from '../classes/config';
-import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import MatchClass from '../classes/match';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';

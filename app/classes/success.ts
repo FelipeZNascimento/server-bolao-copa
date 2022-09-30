@@ -1,7 +1,4 @@
 import ResponseObjectClass from './responseObject';
-import { IConfig } from './config';
-import { IUser } from './user';
-import { ITeam } from './team';
 
 class SuccessClass {
   private result: any[];

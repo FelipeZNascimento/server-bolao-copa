@@ -1,9 +1,8 @@
-import BetClass, { IBet, IBetRaw } from '../classes/bet';
-import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import BetClass, { IBetRaw } from '../classes/bet';
+import MatchClass, { IMatchRaw } from '../classes/match';
 import RankingClass from '../classes/ranking';
-import TeamClass from '../classes/team';
-import UserClass, { IUser, IUserRaw } from '../classes/user';
-import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import UserClass, { IUserRaw } from '../classes/user';
+import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 
 exports.listAll = async (req: any, res: any) => {

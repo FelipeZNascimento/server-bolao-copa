@@ -2,7 +2,7 @@ import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import { IUser } from './user';
-import { IMatch, IRound } from './match';
+import { IMatch } from './match';
 import { ITeam } from './team';
 
 export interface IConfig {
