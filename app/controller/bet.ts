@@ -62,7 +62,11 @@ exports.listAllExtras = async (req: any, res: any) => {
   const loggedUser = req.session.user;
   const seasonStartTimestamp = myCache.get('seasonStart');
   const teams = myCache.get('teams');
-  userInstance.updateTimestamp(loggedUser.id);
+
+  if (loggedUser) {
+    userInstance.updateTimestamp(loggedUser.id);
+  }
+
   try {
     const allQueries = [
       extraBetInstance
