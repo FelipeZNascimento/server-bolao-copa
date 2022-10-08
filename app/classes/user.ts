@@ -9,7 +9,8 @@ export interface IUserRaw {
   name?: string;
   nickname: string;
   password?: string | null;
-  last_timestamp: number;
+  last_timestamp: string;
+  token?: string | null;
 }
 
 export interface IUser {
@@ -20,6 +21,8 @@ export interface IUser {
   newPassword?: string | null;
   nickname: string;
   password?: string | null;
+  lastTimestamp: string;
+  token?: string | null;
 }
 
 class UserClass extends QueryMaker {
@@ -33,6 +36,8 @@ class UserClass extends QueryMaker {
   nickname: string;
   password?: string | null;
   newPassword?: string | null;
+  lastTimestamp: string | null;
+  token?: string | null;
 
   constructor(user: Partial<IUser>, req: any, res: any) {
     super();
@@ -47,24 +52,64 @@ class UserClass extends QueryMaker {
     this.nickname = user.nickname || '';
     this.password = user.password || null;
     this.newPassword = user.newPassword || null;
+    this.token = user.token || null;
+    this.lastTimestamp = user.lastTimestamp || null;
+  }
+
+  set(users: IUser) {
+    this.email = users.email || '';
+    this.id = users.id;
+    this.isActive = users.isActive;
+    this.name = users.name;
+    this.nickname = users.nickname;
+    this.password = users.password;
+    this.lastTimestamp = users.lastTimestamp;
+    this.token = users.token || null;
   }
 
   formatRawUser(users: IUserRaw) {
     return {
-      email: users.email,
+      email: users.email || '',
       id: users.id_user,
       isActive: users.is_active,
       name: users.name,
       nickname: users.nickname,
       password: users.password,
-      lastTimestamp: users.last_timestamp
+      lastTimestamp: users.last_timestamp,
+      token: users.token || null
     };
   }
 
   async checkEmail(email: IUser['email'], id: IUser['id'] | string) {
     return super.runQuery(
-      `SELECT email FROM users WHERE email = ? AND id != ?`,
+      `SELECT users_info.id_user, users_info.name, users_info.nickname, users.email
+        FROM users
+        INNER JOIN users_info ON users.id = users_info.id_user
+        WHERE users.email = ? AND users.id != ?`,
       [email, id]
+    );
+  }
+
+  async checkToken(email: IUser['email'], token: IUser['token']) {
+    return super.runQuery(
+      `SELECT password_recovery.id_user, password_recovery.timestamp, NOW() as now
+        FROM password_recovery
+        INNER JOIN users ON password_recovery.id_user = users.id
+        WHERE password_recovery.token = ? AND users.email = ?
+        AND password_recovery.timestamp > (NOW() - INTERVAL 30 MINUTE)
+        AND password_recovery.consumed = 0
+        ORDER BY timestamp DESC
+        LIMIT 1`,
+      [token, email]
+    );
+  }
+
+  async consumeToken(token: IUser['token']) {
+    return super.runQuery(
+      `UPDATE password_recovery
+        SET consumed = 1
+        WHERE token = ?`,
+      [token]
     );
   }
 
@@ -90,8 +135,8 @@ class UserClass extends QueryMaker {
 
     return super.runQuery(
       `SELECT SQL_NO_CACHE id_user, name, nickname, is_active
-    FROM users_info
-    WHERE id_user = ?`,
+        FROM users_info
+        WHERE id_user = ?`,
       [id]
     );
   }
@@ -155,6 +200,29 @@ class UserClass extends QueryMaker {
         SET password = ?
         WHERE id = ? AND password = ?`,
       [newPassword, id, password]
+    );
+  }
+
+  async updatePasswordViaToken(
+    id: IUser['id'],
+    newPassword: IUser['newPassword'],
+    token: IUser['token']
+  ) {
+    console.log(id, newPassword, token);
+    return super.runQuery(
+      `UPDATE users
+        JOIN password_recovery ON (password_recovery.token = ? AND password_recovery.consumed = 0)
+        SET users.password = ?
+        WHERE users.id = ?`,
+      [token, newPassword, id]
+    );
+  }
+
+  async setPasswordRecovery(id: IUser['id'], token: string) {
+    return super.runQuery(
+      `INSERT INTO password_recovery (id_user, token) 
+        VALUES(?, ?);`,
+      [id, token]
     );
   }
 }

@@ -17,8 +17,10 @@
     "express-async-handler": "^1.2.0",
     "express-mysql-session": "^2.1.6",
     "express-session": "^1.17.1",
-    "on-finished": "^2.4.1",
+    "handlebars": "^4.7.7",
     "node-cache": "^5.1.2",
+    "nodemailer": "^6.8.0",
+    "on-finished": "^2.4.1",
     "request": "^2.88.0"
   },
   "name": "omegacors",

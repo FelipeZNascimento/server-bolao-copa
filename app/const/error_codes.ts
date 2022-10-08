@@ -33,6 +33,10 @@ const USER_ERRORS = {
     code: `${USER_RELATED}6`,
     message: 'Senha inválida. Tente novamente.'
   },
+  USER_INVALID_TOKEN: {
+    code: `${USER_RELATED}6`,
+    message: 'Token inválido.'
+  },
   USER_UNKNOWN: {
     code: `${USER_RELATED}9`,
     message: 'Erro desconhecido.'
