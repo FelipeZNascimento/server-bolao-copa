@@ -98,9 +98,9 @@ exports.register = async function register(req: any, res: any) {
           .then(async () => {
             await userInstance
               .login(userInstance.email, userInstance.password)
-              .then((loginResult: IUser[]) => {
-                if (loginResult.length > 0) {
-                  const newUser = loginResult[0];
+              .then((loginResultRaw: IUserRaw[]) => {
+                if (loginResultRaw.length > 0) {
+                  const newUser = userInstance.formatRawUser(loginResultRaw[0]);
                   req.session.user = newUser;
                   userInstance.success.setResult({ loggedUser: newUser });
                   userInstance.updateTimestamp(newUser.id);
@@ -134,9 +134,11 @@ exports.login = async function (req: any, res: any) {
 
     await userInstance
       .login(userInstance.email, userInstance.password)
-      .then((loginResult: IUser[]) => {
-        if (loginResult.length > 0) {
-          const newUser = loginResult[0];
+      .then((loginResultRaw: IUserRaw[]) => {
+        if (loginResultRaw.length > 0) {
+          const newUser = userInstance.formatRawUser(loginResultRaw[0]);
+          console.log(loginResultRaw[0]);
+          console.log(newUser);
           req.session.user = newUser;
           userInstance.success.setResult({ loggedUser: newUser });
           userInstance.updateTimestamp(newUser.id);
@@ -244,6 +246,8 @@ exports.updatePassword = async function (req: any, res: any) {
       )
       .then((queryInfo) => {
         if (queryInfo.affectedRows > 0) {
+          const mailerInstance = new MailerClass();
+
           userInstance.success.setResult({
             loggedUser: {
               id: req.session.user.id,
@@ -253,6 +257,11 @@ exports.updatePassword = async function (req: any, res: any) {
               isActive: true
             }
           });
+          mailerInstance.sendPasswordConfirmation(
+            userInstance.nickname,
+            userInstance.email
+          );
+
           return userInstance.success.returnApi();
         } else {
           userInstance.error.setResult([ERROR_CODES.USER_WRONG_PASSWORD]);

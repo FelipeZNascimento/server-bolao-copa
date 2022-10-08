@@ -7,7 +7,7 @@ import UserClass from '../classes/user';
 
 exports.update = async (req: any, res: any) => {
   const betInstance = new BetClass(req.body, req, res);
-  const userInstance = new UserClass({}, req, res);
+  const userInstance = new UserClass(req.session.user, req, res);
 
   if (
     !req.session.user ||
@@ -15,6 +15,11 @@ exports.update = async (req: any, res: any) => {
     betInstance.idUser !== req.session.user.id
   ) {
     betInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+    return betInstance.error.returnApi();
+  }
+
+  if (!userInstance.isActive) {
+    betInstance.error.setResult([ERROR_CODES.USER_INACTIVE]);
     return betInstance.error.returnApi();
   }
 
@@ -137,6 +142,11 @@ exports.updateExtra = async (req: any, res: any) => {
   ) {
     extraBetInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
     return extraBetInstance.error.returnApi(401);
+  }
+
+  if (!loggedUser.isActive) {
+    extraBetInstance.error.setResult([ERROR_CODES.USER_INACTIVE]);
+    return extraBetInstance.error.returnApi();
   }
 
   if (
