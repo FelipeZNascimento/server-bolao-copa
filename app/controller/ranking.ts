@@ -18,7 +18,7 @@ exports.listAll = async (req: any, res: any) => {
   try {
     const allQueries = [
       userInstance
-        .getAll()
+        .getAllActive()
         .then((res) => ({ res: res, promiseContent: 'users' })),
       betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
     ];

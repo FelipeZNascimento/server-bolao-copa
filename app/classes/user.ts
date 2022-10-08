@@ -71,7 +71,7 @@ class UserClass extends QueryMaker {
     return {
       email: users.email || '',
       id: users.id_user,
-      isActive: users.is_active,
+      isActive: Boolean(users.is_active),
       name: users.name,
       nickname: users.nickname,
       password: users.password,
@@ -128,6 +128,15 @@ class UserClass extends QueryMaker {
     );
   }
 
+  async getAllActive() {
+    return super.runQuery(
+      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active,
+        UNIX_TIMESTAMP(last_timestamp) as last_timestamp
+        FROM users_info
+        WHERE is_active = 1`
+    );
+  }
+
   async getById(id: IUser['id']) {
     if (id === null) {
       return [];
@@ -152,14 +161,15 @@ class UserClass extends QueryMaker {
   async registerInfo(id: IUser['id'], nickname: IUser['nickname']) {
     return super.runQuery(
       `INSERT INTO users_info (id_user, nickname, is_active) 
-          VALUES(?, ?, ?);`,
+          VALUES(?, ?, 0);`,
       [id, nickname, false]
     );
   }
 
   async login(email: IUser['email'], password: IUser['password']) {
     return super.runQuery(
-      `SELECT users.id, users.email, users_info.name, users_info.nickname
+      `SELECT users_info.id_user, users.email, users_info.name, users_info.nickname,
+      users_info.is_active, users_info.last_timestamp
       FROM users
       INNER JOIN users_info ON users.id = users_info.id_user
       WHERE email = ? AND password = ?`,

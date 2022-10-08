@@ -37,6 +37,10 @@ const USER_ERRORS = {
     code: `${USER_RELATED}6`,
     message: 'Token inválido.'
   },
+  USER_INACTIVE: {
+    code: `${USER_RELATED}7`,
+    message: 'Usuário inativo.'
+  },
   USER_UNKNOWN: {
     code: `${USER_RELATED}9`,
     message: 'Erro desconhecido.'
