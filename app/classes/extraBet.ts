@@ -15,6 +15,7 @@ export interface IExtraBetRaw {
   user_nickname: string;
   user_name: string;
   user_is_active: boolean;
+  user_last_timestamp: string;
 }
 
 export interface INewExtraBet {
@@ -86,7 +87,8 @@ class ExtraBetClass extends QueryMaker {
         id: extraBetRaw.id_user,
         name: extraBetRaw.user_name,
         nickname: extraBetRaw.user_nickname,
-        isActive: extraBetRaw.user_is_active
+        isActive: extraBetRaw.user_is_active,
+        lastTimestamp: extraBetRaw.user_last_timestamp
       },
       team: team !== undefined ? team : null
     };
@@ -97,7 +99,7 @@ class ExtraBetClass extends QueryMaker {
       `SELECT extra_bets.id, extra_bets.id_user, extra_bets.id_extra_type, extra_bets.id_team,
         extra_bets.id_player, extra_bets.timestamp,
         users_info.nickname as user_nickname, users_info.name as user_name,
-        users_info.is_active as user_is_active
+        users_info.is_active as user_is_active, users_info.last_timestamp as user_last_timestamp
         FROM extra_bets
         LEFT JOIN users_info ON extra_bets.id_user = users_info.id_user
         WHERE ? < UNIX_TIMESTAMP()`,

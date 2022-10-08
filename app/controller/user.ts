@@ -1,7 +1,9 @@
 import ErrorClass from '../classes/error';
+import MailerClass from '../classes/mailer';
 import SuccessClass from '../classes/success';
 import UserClass, { IUser, IUserRaw } from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import { guidGenerator } from '../utilities/guidGenerator';
 
 const checkExistingValues = async (userInstance: UserClass) => {
   const allQueries = [
@@ -256,6 +258,104 @@ exports.updatePassword = async function (req: any, res: any) {
           userInstance.error.setResult([ERROR_CODES.USER_WRONG_PASSWORD]);
           return userInstance.error.returnApi(403);
         }
+      });
+  } catch (error) {
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
+  }
+};
+
+exports.resetPassword = async function (req: any, res: any) {
+  const mailerInstance = new MailerClass();
+  const userInstance = new UserClass({}, req, res);
+  const { email } = req.query;
+
+  if (!email) {
+    userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+    return userInstance.error.returnApi();
+  }
+
+  try {
+    userInstance.checkEmail(email, '').then((result) => {
+      if (result.length > 0) {
+        const guid = guidGenerator();
+        const formattedUser = userInstance.formatRawUser(result[0]);
+        userInstance.set(formattedUser);
+
+        userInstance.setPasswordRecovery(userInstance.id, guid);
+        mailerInstance.sendPasswordRecovery(
+          userInstance.nickname,
+          guid,
+          userInstance.email
+        );
+      }
+    });
+
+    return userInstance.success.returnApi();
+  } catch (error) {
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
+  }
+};
+
+exports.recoverPassword = async function (req: any, res: any) {
+  const userInstance = new UserClass(req.body, req, res);
+
+  if (!userInstance.newPassword || !userInstance.token || !userInstance.email) {
+    userInstance.error.setResult([ERROR_CODES.MISSING_PARAMS]);
+    return userInstance.error.returnApi();
+  }
+
+  try {
+    const checkEmailResultRaw: IUserRaw[] = await userInstance.checkEmail(
+      userInstance.email,
+      ''
+    );
+    const checkTokenResultRaw: IUserRaw[] = await userInstance.checkToken(
+      userInstance.email,
+      userInstance.token
+    );
+
+    if (checkEmailResultRaw.length === 0) {
+      userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+      return userInstance.error.returnApi(403);
+    }
+
+    if (checkTokenResultRaw.length === 0) {
+      userInstance.error.setResult([ERROR_CODES.USER_INVALID_TOKEN]);
+      return userInstance.error.returnApi(403);
+    }
+
+    const checkEmailResult = userInstance.formatRawUser(checkEmailResultRaw[0]);
+    const checkTokenResult = userInstance.formatRawUser(checkTokenResultRaw[0]);
+
+    if (checkEmailResult.id !== checkTokenResult.id) {
+      userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+      return userInstance.error.returnApi(403);
+    }
+
+    userInstance.set({
+      ...checkEmailResult,
+      token: userInstance.token,
+      newPassword: userInstance.newPassword
+    });
+
+    userInstance
+      .updatePasswordViaToken(
+        userInstance.id,
+        userInstance.newPassword,
+        userInstance.token
+      )
+      .then((result) => {
+        const mailerInstance = new MailerClass();
+        if (result.affectedRows > 0) {
+          userInstance.consumeToken(userInstance.token);
+          mailerInstance.sendPasswordConfirmation(
+            userInstance.nickname,
+            userInstance.email
+          );
+        }
+        return userInstance.success.returnApi();
       });
   } catch (error) {
     userInstance.error.catchError(error);

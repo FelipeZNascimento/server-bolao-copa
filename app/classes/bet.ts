@@ -13,6 +13,7 @@ export interface IBetRaw {
   user_nickname: string;
   user_name: string;
   user_is_active: boolean;
+  user_last_timestamp: string;
 }
 
 export interface IBet {
@@ -78,7 +79,8 @@ class BetClass extends QueryMaker {
         id: betRaw.id_user,
         name: betRaw.user_name,
         nickname: betRaw.user_nickname,
-        isActive: betRaw.user_is_active
+        isActive: betRaw.user_is_active,
+        lastTimestamp: betRaw.user_last_timestamp
       }
     };
   }
@@ -113,7 +115,7 @@ class BetClass extends QueryMaker {
     return super.runQuery(
       `SELECT bets.id, bets.id_match, bets.id_user, bets.goals_home, bets.goals_away,
         bets.timestamp, users_info.nickname as user_nickname, users_info.name as user_name,
-        users_info.is_active as user_is_active
+        users_info.is_active as user_is_active, users_info.last_timestamp as user_last_timestamp
         FROM bets
         LEFT JOIN users_info ON bets.id_user = users_info.id_user
         LEFT JOIN matches ON bets.id_match = matches.id
