@@ -18,7 +18,7 @@ exports.listAll = async (req: any, res: any) => {
   try {
     const allQueries = [
       userInstance
-        .getAllActive()
+        .getAll()
         .then((res) => ({ res: res, promiseContent: 'users' })),
       betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
     ];
@@ -51,9 +51,22 @@ exports.listAll = async (req: any, res: any) => {
     const allUsers: IUserRaw[] = fulfilledValues.find(
       (item) => item.promiseContent === 'users'
     ).res;
-    const formattedUsers = allUsers.map((user) =>
+
+    let formattedUsers = allUsers.map((user) =>
       userInstance.formatRawUser(user)
     );
+
+    if (loggedUser) {
+      const currentUser = formattedUsers.find(
+        (user) => user.id === loggedUser.id
+      );
+      if (currentUser && currentUser.isActive !== loggedUser.isActive) {
+        req.session.user = currentUser;
+      }
+    }
+
+    formattedUsers = formattedUsers.filter((item) => item.isActive);
+
     const allRawBets: IBetRaw[] = fulfilledValues.find(
       (item) => item.promiseContent === 'bets'
     ).res;
