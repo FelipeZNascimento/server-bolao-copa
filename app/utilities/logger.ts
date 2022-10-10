@@ -35,6 +35,10 @@ const logger = (req: any, res: any, next: express.NextFunction) => {
       currentDatetime.getSeconds();
 
     let method = req.method;
+    let body =
+      req.body && Object.keys(req.body).length > 0
+        ? JSON.stringify(req.body)
+        : null;
     let url = req.url;
     let status = res.statusCode;
     const start = process.hrtime();
@@ -51,8 +55,8 @@ const logger = (req: any, res: any, next: express.NextFunction) => {
     )}] ${method}:${url} ${status} ${chalk.red(
       durationInMilliseconds
     )} ms [userId: ${userId}] ${errorLog}`;
-
     let log = `[${formattedTime}] ${method}:${url} ${status} ${durationInMilliseconds} ms [userId: ${userId}] ${errorLog}`;
+    log += body ? `\n${body}` : '';
 
     console.log(`${logColor}`);
     fs.appendFile(`logs/${formattedDate}.txt`, log + '\n', (err) => {
