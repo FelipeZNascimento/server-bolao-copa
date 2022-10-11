@@ -10,6 +10,9 @@ const routes = (app: Express) => {
 
   // Initial Config Routing
   app.route('/copa2022/general/config/').get(configController.default);
+  
+  // Home Routing
+  app.route('/copa2022/general/news/').get(configController.news);
 
   // User Routing
   app.route('/copa2022/user/').get(userController.listAll);

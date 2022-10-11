@@ -1,4 +1,5 @@
 import { IMatch } from '../classes/match';
+import { TNews } from '../classes/scraper';
 import { ITeam } from '../classes/team';
 
 const NodeCache = require('node-cache');
@@ -15,15 +16,19 @@ class CacheClass {
   }
 
   setTeams(teams: ITeam[]) {
-    CacheInstance.set('teams', teams, 60 * 60 * 24);
+    CacheInstance.set('teams', teams, 60 * 60 * 24); // Daily
   }
 
   setMatches(matches: IMatch[]) {
-    CacheInstance.set('matches', matches, 10);
+    CacheInstance.set('matches', matches, 10); // Every 10s
   }
 
   setSeasonStart(seasonStart: number) {
-    CacheInstance.set('seasonStart', seasonStart, 60 * 60 * 24);
+    CacheInstance.set('seasonStart', seasonStart, 60 * 60 * 24); // Daily
+  }
+
+  setNews(news: TNews[]) {
+    CacheInstance.set('news', news);
   }
 }
 

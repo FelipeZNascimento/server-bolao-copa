@@ -1,5 +1,6 @@
 import ConfigClass from '../classes/config';
 import MatchClass from '../classes/match';
+import ScraperClass from '../classes/scraper';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
@@ -84,5 +85,33 @@ exports.default = async (req: any, res: any) => {
   } catch (error: unknown) {
     configInstance.error.catchError(error);
     return configInstance.error.returnApi();
+  }
+};
+
+exports.news = async (req: any, res: any) => {
+  const scraperInstance = new ScraperClass(req, res);
+
+  try {
+    let news = [];
+    if (myCache.has('news')) {
+      news = myCache.get('news');
+      scraperInstance.success.setResult({ news: news });
+      scraperInstance.setNews(news);
+    }
+
+    scraperInstance.scrape().then((result) => {
+      scraperInstance.success.setResult({ news: result });
+      myCache.setNews(scraperInstance.news);
+      if (news.length === 0) {
+        return scraperInstance.success.returnApi();
+      }
+    });
+
+    if (news.length > 0) {
+      return scraperInstance.success.returnApi();
+    }
+  } catch (error: unknown) {
+    scraperInstance.error.catchError(error);
+    return scraperInstance.error.returnApi();
   }
 };
