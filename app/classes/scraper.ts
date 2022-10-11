@@ -1,5 +1,6 @@
 import ErrorClass from './error';
 import SuccessClass from './success';
+import { myCache } from '../utilities/cache';
 
 const puppeteer = require('puppeteer');
 
@@ -35,8 +36,21 @@ class ScraperClass {
   }
 
   async scrape() {
-    const browser = await puppeteer.launch({});
-    const page = await browser.newPage();
+    let browser, page;
+    try {
+      browser = await puppeteer.launch({});
+      page = await browser.newPage();
+    } catch (error) {
+      this.setNews([
+        {
+          title: error as string,
+          resume: error as string,
+          link: error as string,
+          image: error as string,
+          date: error as string
+        }
+      ]);
+    }
     const news = [];
 
     await page.goto(
@@ -87,6 +101,7 @@ class ScraperClass {
     }
 
     this.setNews(news);
+    myCache.setNews(news);
     browser.close();
     return this.news;
 
