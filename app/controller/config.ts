@@ -102,14 +102,9 @@ exports.news = async (req: any, res: any) => {
     scraperInstance.scrape().then((result) => {
       scraperInstance.success.setResult({ news: result });
       myCache.setNews(scraperInstance.news);
-      if (news.length === 0) {
-        return scraperInstance.success.returnApi();
-      }
     });
 
-    if (news.length > 0) {
-      return scraperInstance.success.returnApi();
-    }
+    return scraperInstance.success.returnApi();
   } catch (error: unknown) {
     scraperInstance.error.catchError(error);
     return scraperInstance.error.returnApi();
