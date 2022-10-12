@@ -84,7 +84,7 @@ class ScraperClass {
             date
           });
         } catch (error) {
-          console.log("The element didn't appear [ignore]");
+          console.log("Some of the elements weren't found [ignore news]");
         }
       }
     }
