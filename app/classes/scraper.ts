@@ -36,7 +36,9 @@ class ScraperClass {
   }
 
   async scrape() {
-    let browser = await puppeteer.launch({});
+    let browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     let page = await browser.newPage();
     const news = [];
 
