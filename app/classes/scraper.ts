@@ -36,21 +36,8 @@ class ScraperClass {
   }
 
   async scrape() {
-    let browser, page;
-    try {
-      browser = await puppeteer.launch({});
-      page = await browser.newPage();
-    } catch (error) {
-      this.setNews([
-        {
-          title: error as string,
-          resume: error as string,
-          link: error as string,
-          image: error as string,
-          date: error as string
-        }
-      ]);
-    }
+    let browser = await puppeteer.launch({});
+    let page = await browser.newPage();
     const news = [];
 
     await page.goto(
