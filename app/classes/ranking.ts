@@ -1,9 +1,19 @@
+// Classes
 import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
+
+// Types
+import { IExtraBet, IExtraBetResults } from './extraBet';
 import { IUser } from './user';
 import { IBet } from './bet';
 import { IMatch } from './match';
+
+// Utilities
+import { matchValue } from '../utilities/bet_calculator';
+
+// Constants
+import { BET_POINTS, EXTRA_BET_POINTS, EXTRA_TYPES } from '../const/bet_values';
 
 export interface IUserRanking extends IUser {
   position: number;
@@ -11,6 +21,7 @@ export interface IUserRanking extends IUser {
   full: number;
   half: number;
   minimun: number;
+  extras: number;
 }
 
 export interface IRanking {
@@ -35,9 +46,6 @@ class RankingClass extends QueryMaker {
     };
   }
 
-  //   setRanking(ranking: []) {
-  //     this.ranking = ranking;
-  //   }
   prepareUsers(users: IUser[]) {
     const rankingUsers = users.map((user) => {
       return {
@@ -46,7 +54,8 @@ class RankingClass extends QueryMaker {
         points: 0,
         full: 0,
         half: 0,
-        minimun: 0
+        minimun: 0,
+        extras: 0
       };
     });
 
@@ -63,6 +72,8 @@ class RankingClass extends QueryMaker {
       half: 0,
       minimun: 0
     };
+
+    const matchMultiplier = matchValue(match.round);
 
     if (
       match.awayTeam.goals !== null &&
@@ -83,7 +94,7 @@ class RankingClass extends QueryMaker {
           bet.goalsHome === match.homeTeam.goals
         ) {
           // na mosca
-          calculationObject.points = 5;
+          calculationObject.points = BET_POINTS.FULL * matchMultiplier;
           calculationObject.full++;
         } else {
           if (
@@ -91,11 +102,11 @@ class RankingClass extends QueryMaker {
             bet.goalsHome === match.homeTeam.goals
           ) {
             // acertou 1 placar
-            calculationObject.points = 3;
+            calculationObject.points = BET_POINTS.PARTIAL * matchMultiplier;
             calculationObject.half++;
           } else {
             // não acertou placar
-            calculationObject.points = 2;
+            calculationObject.points = BET_POINTS.MINIMUN * matchMultiplier;
             calculationObject.minimun++;
           }
         }
@@ -106,11 +117,11 @@ class RankingClass extends QueryMaker {
         // Acertou empate
         if (bet.goalsAway === match.awayTeam.goals) {
           // na mosca
-          calculationObject.points = 5;
+          calculationObject.points = BET_POINTS.FULL * matchMultiplier;
           calculationObject.full++;
         } else {
           // não acertou placar
-          calculationObject.points = 2;
+          calculationObject.points = BET_POINTS.MINIMUN * matchMultiplier;
           calculationObject.minimun++;
         }
       }
@@ -119,8 +130,47 @@ class RankingClass extends QueryMaker {
     return calculationObject;
   }
 
-  buildRanking(allMatches: IMatch[]) {
+  buildRanking(
+    allMatches: IMatch[],
+    allExtraBets: IExtraBet[],
+    allExtraBetsResults: IExtraBetResults[]
+  ) {
     this.ranking.users.forEach((user) => {
+      const userExtraBets = allExtraBets.filter(
+        (item) => item.idUser === user.id
+      );
+      if (allExtraBetsResults.length > 0 && userExtraBets.length > 0) {
+        const results = allExtraBetsResults[0];
+        userExtraBets.forEach((userExtraBet) => {
+          if (userExtraBet.team) {
+            if (
+              userExtraBet.idExtraType === EXTRA_TYPES.CHAMPION &&
+              userExtraBet.team?.id === results.id_champion
+            ) {
+              user.extras += EXTRA_BET_POINTS.CHAMPION;
+            } else if (
+              userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
+              userExtraBet.idTeam === results.id_offense
+            ) {
+              user.extras += EXTRA_BET_POINTS.OFFENSE;
+            } else if (
+              userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
+              userExtraBet.idTeam === results.id_defense
+            ) {
+              user.extras += EXTRA_BET_POINTS.DEFENSE;
+            }
+          } else if (
+            userExtraBet.idPlayer &&
+            userExtraBet.idExtraType === EXTRA_TYPES.STRIKER &&
+            userExtraBet.idPlayer === results.id_striker
+          ) {
+            user.extras += EXTRA_BET_POINTS.STRIKER;
+          }
+        });
+
+        user.points += user.extras;
+      }
+
       allMatches.forEach((match) => {
         const userBet = match.bets.find((bet) => bet.user.id === user.id);
         if (userBet) {

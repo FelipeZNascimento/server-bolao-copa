@@ -2,6 +2,7 @@ import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import { IUser } from './user';
+import { IExtraBet } from './extraBet';
 
 export interface IBetRaw {
   id: number;
@@ -24,15 +25,6 @@ export interface IBet {
   idUser?: number;
   timestamp: string;
   user: IUser;
-}
-
-export interface IExtraBet {
-  id: number;
-  idExtraType: number;
-  idTeam: number | null;
-  idPlayer: number | null;
-  user: IUser;
-  timestamp: string;
 }
 
 class BetClass extends QueryMaker {
