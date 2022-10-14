@@ -4,6 +4,13 @@ import QueryMaker from './queryMaker';
 import { IUser } from './user';
 import { ITeam } from './team';
 
+export interface IExtraBetResults {
+  id_champion: number | null;
+  id_offense: number | null;
+  id_defense: number | null;
+  id_striker: number | null;
+}
+
 export interface IExtraBetRaw {
   id: number;
   id_match: number;
@@ -102,6 +109,15 @@ class ExtraBetClass extends QueryMaker {
         users_info.is_active as user_is_active, users_info.last_timestamp as user_last_timestamp
         FROM extra_bets
         LEFT JOIN users_info ON extra_bets.id_user = users_info.id_user
+        WHERE ? < UNIX_TIMESTAMP()`,
+      [seasonStart]
+    );
+  }
+
+  async getResults(seasonStart: number) {
+    return super.runQuery(
+      `SELECT id_champion, id_offense, id_defense, id_striker
+        FROM extra_bets_results
         WHERE ? < UNIX_TIMESTAMP()`,
       [seasonStart]
     );

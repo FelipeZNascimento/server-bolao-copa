@@ -1,4 +1,8 @@
 import BetClass, { IBetRaw } from '../classes/bet';
+import ExtraBetClass, {
+  IExtraBetRaw,
+  IExtraBetResults
+} from '../classes/extraBet';
 import MatchClass, { IMatchRaw } from '../classes/match';
 import RankingClass from '../classes/ranking';
 import UserClass, { IUserRaw } from '../classes/user';
@@ -6,11 +10,15 @@ import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 
 exports.listAll = async (req: any, res: any) => {
+  const extraBetInstance = new ExtraBetClass(req, res);
   const betInstance = new BetClass({}, req, res);
   const matchInstance = new MatchClass(req, res);
   const rankingInstance = new RankingClass(req, res);
   const userInstance = new UserClass({}, req, res);
   const loggedUser = req.session.user;
+  const seasonStartTimestamp = myCache.get('seasonStart');
+  const teams = myCache.get('teams');
+
   if (loggedUser) {
     userInstance.updateTimestamp(loggedUser.id);
   }
@@ -20,7 +28,15 @@ exports.listAll = async (req: any, res: any) => {
       userInstance
         .getAll()
         .then((res) => ({ res: res, promiseContent: 'users' })),
-      betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
+      betInstance
+        .getAll()
+        .then((res) => ({ res: res, promiseContent: 'bets' })),
+      extraBetInstance
+        .getAll(seasonStartTimestamp)
+        .then((res) => ({ res: res, promiseContent: 'extraBets' })),
+      extraBetInstance
+        .getResults(seasonStartTimestamp)
+        .then((res) => ({ res: res, promiseContent: 'extraBetsResults' }))
     ];
 
     if (!myCache.has('matches')) {
@@ -76,6 +92,19 @@ exports.listAll = async (req: any, res: any) => {
     );
     betInstance.setBets(allBets);
 
+    const allExtraBetsResults: IExtraBetResults[] = fulfilledValues.find(
+      (item) => item.promiseContent === 'extraBetsResults'
+    ).res;
+
+    const allRawExtraBets: IExtraBetRaw[] = fulfilledValues.find(
+      (item) => item.promiseContent === 'extraBets'
+    ).res;
+
+    const allExtraBets = allRawExtraBets.map((extraBet: IExtraBetRaw) =>
+      extraBetInstance.formatRawExtraBet(extraBet, teams)
+    );
+    extraBetInstance.setExtraBets(allExtraBets);
+
     if (myCache.has('matches')) {
       const mergedMatches = matchInstance.mergeBets(
         myCache.get('matches'),
@@ -98,7 +127,11 @@ exports.listAll = async (req: any, res: any) => {
       myCache.setMatches(matchInstance.matches);
     }
     rankingInstance.prepareUsers(formattedUsers);
-    rankingInstance.buildRanking(matchInstance.matches);
+    rankingInstance.buildRanking(
+      matchInstance.matches,
+      allExtraBets,
+      allExtraBetsResults
+    );
 
     rankingInstance.success.setResult(rankingInstance.ranking);
     return rankingInstance.success.returnApi();
