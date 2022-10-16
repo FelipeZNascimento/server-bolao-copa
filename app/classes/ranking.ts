@@ -137,7 +137,7 @@ class RankingClass extends QueryMaker {
   ) {
     this.ranking.users.forEach((user) => {
       const userExtraBets = allExtraBets.filter(
-        (item) => item.idUser === user.id
+        (item) => item.user.id === user.id
       );
       if (allExtraBetsResults.length > 0 && userExtraBets.length > 0) {
         const results = allExtraBetsResults[0];

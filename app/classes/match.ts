@@ -61,9 +61,6 @@ export interface IMatchRaw {
   away_id_confederation: string;
   home_iso_code: string;
   away_iso_code: string;
-  referee_name: string;
-  referee_birth: string;
-  referee_id_country: number;
   stadium_name: string;
   stadium_city: string;
   stadium_capacity: number;
@@ -77,6 +74,9 @@ export interface IMatchRaw {
   away_confederation_name: string;
   home_confederation_name_en: string;
   away_confederation_name_en: string;
+  referee_name: string;
+  referee_birth: string;
+  referee_id_country: number;
   referee_country_name: string;
   referee_country_name_en: string;
   referee_country_abbreviation: string;

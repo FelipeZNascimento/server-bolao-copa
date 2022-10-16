@@ -1,8 +1,8 @@
 export enum EXTRA_TYPES {
   CHAMPION,
+  STRIKER,
   OFFENSE,
-  DEFENSE,
-  STRIKER
+  DEFENSE
 }
 
 export const BET_POINTS = {
