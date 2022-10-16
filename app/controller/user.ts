@@ -257,9 +257,10 @@ exports.updatePassword = async function (req: any, res: any) {
               isActive: true
             }
           });
+
           mailerInstance.sendPasswordConfirmation(
-            userInstance.nickname,
-            userInstance.email
+            loggedUser.nickname,
+            loggedUser.email
           );
 
           return userInstance.success.returnApi();
