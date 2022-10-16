@@ -2,6 +2,13 @@ import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import SuccessClass from './success';
 
+export interface IConfederationRaw {
+  confederation_id: number;
+  confederation_name: string;
+  confederation_name_en: string;
+  confederation_abbreviation: string;
+}
+
 export interface IConfederation {
   id: number;
   abbreviation: string;
@@ -9,24 +16,22 @@ export interface IConfederation {
   nameEn: string;
 }
 
-export interface ITeamRaw {
-  id: number;
-  group: string;
-  id_confederation: number;
-  name: string;
-  name_en: string;
-  abbreviation: string;
-  abbreviation_en: string;
-  iso_code: string;
-  confederation_id: number;
-  confederation_name: string;
-  confederation_name_en: string;
-  confederation_abbreviation: string;
-  colors: string;
+export interface ITeamRaw extends IConfederationRaw {
+  team_id: number;
+  team_id_fifa: number;
+  team_group: string;
+  team_id_confederation: number;
+  team_name: string;
+  team_name_en: string;
+  team_abbreviation: string;
+  team_abbreviation_en: string;
+  team_iso_code: string;
+  team_colors: string;
 }
 
 export interface ITeam {
   id: number;
+  idFifa: number;
   isoCode: string;
   goals: number | null;
   penalties: number | null;
@@ -60,16 +65,18 @@ class TeamClass extends QueryMaker {
 
   formatRawTeam(teamRaw: ITeamRaw) {
     return {
-      id: teamRaw.id,
-      isoCode: teamRaw.iso_code,
+      id: teamRaw.team_id,
+      idFifa: teamRaw.team_id_fifa,
+      isoCode: teamRaw.team_iso_code,
       goals: null,
       penalties: null,
-      name: teamRaw.name,
-      nameEn: teamRaw.name_en,
-      abbreviation: teamRaw.abbreviation,
-      abbreviationEn: teamRaw.abbreviation_en,
-      group: teamRaw.group,
-      colors: teamRaw.colors === null ? [] : teamRaw.colors.split(','),
+      name: teamRaw.team_name,
+      nameEn: teamRaw.team_name_en,
+      abbreviation: teamRaw.team_abbreviation,
+      abbreviationEn: teamRaw.team_abbreviation_en,
+      group: teamRaw.team_group,
+      colors:
+        teamRaw.team_colors === null ? [] : teamRaw.team_colors.split(','),
       confederation: {
         id: teamRaw.confederation_id,
         abbreviation: teamRaw.confederation_abbreviation,
@@ -81,13 +88,14 @@ class TeamClass extends QueryMaker {
 
   async getAll() {
     return super.runQuery(
-      `SELECT teams.id, teams.group,
-        countries.id_confederation, countries.name, countries.name_en, countries.abbreviation,
-        countries.abbreviation_en, countries.iso_code, 
+      `SELECT teams.id as team_id, teams.group as team_group, teams.id_fifa as team_id_fifa,
+        countries.id_confederation as team_id_confederation, countries.name as team_name,
+        countries.name_en as team_name_en, countries.abbreviation as team_abbreviation,
+        countries.abbreviation_en as team_abbreviation_en, countries.iso_code as team_iso_code, 
         confederations.id as confederation_id, confederations.name as confederation_name,
         confederations.name_en as confederation_name_en,
         confederations.abbreviation as confederation_abbreviation,
-        GROUP_CONCAT(DISTINCT teams_colors.color ORDER BY teams_colors.id) colors
+        GROUP_CONCAT(DISTINCT teams_colors.color ORDER BY teams_colors.id) team_colors
         FROM teams
         LEFT JOIN countries ON countries.id = teams.id_country
         LEFT JOIN confederations ON countries.id_confederation = confederations.id
@@ -106,7 +114,7 @@ class TeamClass extends QueryMaker {
     return super.runQuery(
       `SELECT teams.id, teams.group,
       countries.id_confederation, countries.name, countries.name_en, countries.abbreviation,
-      countries.abbreviation_en, countries.iso_code, 
+      countries.abbreviation_en, countries.iso_code, countries.id_fifa,
       confederations.id as confederation_id, confederations.name as confederation_name,
       confederations.name_en as confederation_name_en,
       confederations.abbreviation as confederation_abbreviation,
