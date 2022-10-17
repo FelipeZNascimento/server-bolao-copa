@@ -96,6 +96,12 @@ exports.register = async function register(req: any, res: any) {
         await userInstance
           .registerInfo(userInstance.id, userInstance.nickname)
           .then(async () => {
+            const mailerInstance = new MailerClass();
+            mailerInstance.sendWelcome(
+              userInstance.nickname,
+              userInstance.email
+            );
+
             await userInstance
               .login(userInstance.email, userInstance.password)
               .then((loginResultRaw: IUserRaw[]) => {
@@ -137,8 +143,6 @@ exports.login = async function (req: any, res: any) {
       .then((loginResultRaw: IUserRaw[]) => {
         if (loginResultRaw.length > 0) {
           const newUser = userInstance.formatRawUser(loginResultRaw[0]);
-          console.log(loginResultRaw[0]);
-          console.log(newUser);
           req.session.user = newUser;
           userInstance.success.setResult({ loggedUser: newUser });
           userInstance.updateTimestamp(newUser.id);
