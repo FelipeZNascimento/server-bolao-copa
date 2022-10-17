@@ -43,9 +43,6 @@ const routes = (app: Express) => {
   app.route('/copa2022/team/:id/').get(teamController.listById);
 
   // Match Routing
-  app
-    .route('/copa2022/match/userBets/')
-    .get(matchController.listAllWithUserBets);
   app.route('/copa2022/match/').get(matchController.listAll);
 
   // Ranking Routing
