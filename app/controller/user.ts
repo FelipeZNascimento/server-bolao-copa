@@ -168,7 +168,12 @@ exports.logout = function (req: any, res: any) {
     return errorInstance.returnApi();
   }
 
-  req.session.destroy();
+  req.session.destroy(function () {
+    if (req.session && req.session.user) {
+      delete req.session.user;
+    }
+  });
+
   const successInstance = new SuccessClass([], req, res);
   return successInstance.returnApi();
 };
