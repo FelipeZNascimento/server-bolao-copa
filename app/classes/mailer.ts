@@ -21,8 +21,26 @@ class MailerClass {
     });
   }
 
+  async sendWelcome(username: string, email: string) {
+    let html = await readFile('./app/mails/welcome.html', 'utf8');
+    let template = handlebars.compile(html);
+    let data = {
+      username: username
+    };
+    let htmlToSend = template(data);
+
+    const mailerInfo = {
+      from: '"Bolão Copa 2022" <bolao@omegafox.me>', // sender address
+      to: email, // list of receivers
+      subject: `Bem-vindo, ${username}`, // Subject line
+      html: htmlToSend // html body
+    };
+
+    return this.transporter.sendMail(mailerInfo);
+  }
+
   async sendPasswordRecovery(username: string, guid: string, email: string) {
-    let html = await readFile('./app/utilities/forgotPassword.html', 'utf8');
+    let html = await readFile('./app/mails/forgotPassword.html', 'utf8');
     let template = handlebars.compile(html);
     let data = {
       username: username,
@@ -33,19 +51,15 @@ class MailerClass {
     const mailerInfo = {
       from: '"Bolão Copa 2022" <bolao@omegafox.me>', // sender address
       to: email, // list of receivers
-      subject: 'Esqueceu a senha?', // Subject line
+      subject: `Esqueceu a senha, ${username}?`, // Subject line
       html: htmlToSend // html body
-      //   html: '<b>Esqueceu pra caralho em HTML</b>' // html body
     };
 
     return this.transporter.sendMail(mailerInfo);
   }
 
   async sendPasswordConfirmation(username: string, email: string) {
-    let html = await readFile(
-      './app/utilities/confirmPasswordChange.html',
-      'utf8'
-    );
+    let html = await readFile('./app/mails/confirmPasswordChange.html', 'utf8');
     let template = handlebars.compile(html);
     let data = {
       username: username
