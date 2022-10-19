@@ -14,6 +14,7 @@ const routes = (app: Express) => {
 
   // Home Routing
   app.route('/copa2022/general/news/').get(configController.news);
+  app.route('/copa2022/general/news/:key').post(configController.postNews);
 
   // User Routing
   app.route('/copa2022/user/').get(userController.listAll);

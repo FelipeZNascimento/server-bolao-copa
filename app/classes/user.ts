@@ -153,7 +153,7 @@ class UserClass extends QueryMaker {
   async register(email: IUser['email'], password: IUser['password']) {
     return super.runQuery(
       `INSERT INTO users (email, password)
-        VALUES(?, ?);`,
+        VALUES(?, ?)`,
       [email, password]
     );
   }
@@ -161,7 +161,7 @@ class UserClass extends QueryMaker {
   async registerInfo(id: IUser['id'], nickname: IUser['nickname']) {
     return super.runQuery(
       `INSERT INTO users_info (id_user, nickname, is_active) 
-          VALUES(?, ?, 0);`,
+          VALUES(?, ?, 0)`,
       [id, nickname, false]
     );
   }
