@@ -71,6 +71,10 @@ export const ERROR_CODES = {
     code: `${GENERAL}2`,
     message: 'Erro na cache.'
   },
+  API_KEY_ERROR: {
+    code: `${GENERAL}3`,
+    message: 'Erro na API key.'
+  },
   GENERAL_UNKNOWN: {
     code: `${GENERAL}9`,
     message: 'Erro desconhecido.'

@@ -4,19 +4,7 @@ const express = require('express');
 
 const app = express();
 const environment = app.get('env');
-const connection = mysql.createConnection(returnConfig(environment));
+const pool = mysql.createPool(returnConfig(environment));
 
-connection.connect(function (error: unknown) {
-  if (error) {
-    let result;
-    if (typeof error === 'string') {
-      result = error.toUpperCase(); // works, `e` narrowed to string
-    } else if (error instanceof Error) {
-      result = error.message; // works, `e` narrowed to Error
-    }
-    console.log(result);
-    throw result;
-  }
-});
 
-module.exports = connection;
+module.exports = pool;
