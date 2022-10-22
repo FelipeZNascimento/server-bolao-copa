@@ -150,19 +150,19 @@ class RankingClass extends QueryMaker {
               user.extras += EXTRA_BET_POINTS.CHAMPION;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
-              userExtraBet.idTeam === results.id_offense
+              userExtraBet.team?.id === results.id_offense
             ) {
               user.extras += EXTRA_BET_POINTS.OFFENSE;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
-              userExtraBet.idTeam === results.id_defense
+              userExtraBet.team?.id === results.id_defense
             ) {
               user.extras += EXTRA_BET_POINTS.DEFENSE;
             }
           } else if (
-            userExtraBet.idPlayer &&
+            userExtraBet.player?.id &&
             userExtraBet.idExtraType === EXTRA_TYPES.STRIKER &&
-            userExtraBet.idPlayer === results.id_striker
+            userExtraBet.player.id === results.id_striker
           ) {
             user.extras += EXTRA_BET_POINTS.STRIKER;
           }
