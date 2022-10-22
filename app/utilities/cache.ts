@@ -1,5 +1,5 @@
 import { IMatch } from '../classes/match';
-import { TNews } from '../classes/scraper';
+import { TNews } from '../classes/news';
 import { ITeam } from '../classes/team';
 
 const NodeCache = require('node-cache');

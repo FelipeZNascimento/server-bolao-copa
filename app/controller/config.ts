@@ -1,6 +1,6 @@
 import ConfigClass from '../classes/config';
 import MatchClass from '../classes/match';
-import ScraperClass from '../classes/scraper';
+import NewsClass, { TNews } from '../classes/news';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
@@ -88,21 +88,37 @@ exports.default = async (req: any, res: any) => {
   }
 };
 
+exports.postNews = async (req: any, res: any) => {
+  const newsInstance = new NewsClass(req, res);
+  const news: TNews = req.body;
+
+  // get all news and compare titles
+  try {
+    newsInstance.insert(news);
+    return newsInstance.success.returnApi();
+  } catch (error: unknown) {
+    newsInstance.error.catchError(error);
+    return newsInstance.error.returnApi();
+  }
+};
+
 exports.news = async (req: any, res: any) => {
-  const scraperInstance = new ScraperClass(req, res);
+  const newsInstance = new NewsClass(req, res);
+  newsInstance.success.setResult({});
 
   try {
-    let news = [];
     if (myCache.has('news')) {
-      news = myCache.get('news');
-      scraperInstance.success.setResult({ news: news });
-      scraperInstance.setNews(news);
+      const news = myCache.get('news');
+      newsInstance.success.setResult({ news: news });
     }
 
-    scraperInstance.scrape();
-    return scraperInstance.success.returnApi();
+    newsInstance.getAll().then((news) => {
+      newsInstance.success.setResult({ news: news });
+      myCache.setNews(news);
+      return newsInstance.success.returnApi();
+    });
   } catch (error: unknown) {
-    scraperInstance.error.catchError(error);
-    return scraperInstance.error.returnApi();
+    newsInstance.error.catchError(error);
+    return newsInstance.error.returnApi();
   }
 };
