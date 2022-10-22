@@ -3,7 +3,7 @@ import MatchClass from '../classes/match';
 import NewsClass, { TNews } from '../classes/news';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
-import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 
 exports.default = async (req: any, res: any) => {
@@ -14,6 +14,7 @@ exports.default = async (req: any, res: any) => {
   if (loggedUser) {
     userInstance.updateTimestamp(loggedUser.id);
   }
+
   try {
     const matchInstance = new MatchClass(req, res);
     const teamInstance = new TeamClass(req, res);
@@ -91,6 +92,12 @@ exports.default = async (req: any, res: any) => {
 exports.postNews = async (req: any, res: any) => {
   const newsInstance = new NewsClass(req, res);
   const news: TNews = req.body;
+  const { key } = req.params;
+
+  if (key !== process.env.API_UPDATE_KEY) {
+    newsInstance.error.setResult([ERROR_CODES.API_KEY_ERROR]);
+    return newsInstance.error.returnApi();
+  }
 
   // get all news and compare titles
   try {

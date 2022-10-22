@@ -28,7 +28,7 @@ class CacheClass {
   }
 
   setNews(news: TNews[]) {
-    CacheInstance.set('news', news);
+    CacheInstance.set('news', news, 60 * 15); // Every 15min
   }
 }
 

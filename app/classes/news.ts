@@ -22,7 +22,11 @@ class NewsClass extends QueryMaker {
   }
 
   async getAll() {
-    return super.runQuery(`SELECT * FROM news`);
+    return super.runQuery(
+      `SELECT * FROM news
+      ORDER BY timestamp DESC, id DESC
+      LIMIT 18`
+    );
   }
 
   async insert(news: TNews) {
