@@ -12,6 +12,9 @@ const routes = (app: Express) => {
   // Initial Config Routing
   app.route('/copa2022/general/config/').get(configController.default);
 
+  // Mailer Routing
+  //   app.route('/copa2022/user/helloAgain').get(userController.helloAgain);
+
   // Home Routing
   app.route('/copa2022/general/news/').get(configController.news);
   app.route('/copa2022/general/news/:key').post(configController.postNews);
@@ -45,6 +48,7 @@ const routes = (app: Express) => {
 
   // Match Routing
   app.route('/copa2022/match/').get(matchController.listAll);
+  app.route('/copa2022/match/update/').get(matchController.update);
 
   // Ranking Routing
   app.route('/copa2022/ranking/').get(rankingController.listAll);

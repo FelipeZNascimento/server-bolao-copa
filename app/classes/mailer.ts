@@ -21,6 +21,24 @@ class MailerClass {
     });
   }
 
+  //   async sendHelloAgain(fullname: string, email: string) {
+  //     let html = await readFile('./app/mails/helloAgain.html', 'utf8');
+  //     let template = handlebars.compile(html);
+  //     let data = {
+  //       fullname: fullname
+  //     };
+  //     let htmlToSend = template(data);
+
+  //     const mailerInfo = {
+  //       from: '"Bolão Copa 2022" <bolao@omegafox.me>', // sender address
+  //       to: email, // list of receivers
+  //       subject: `Saudades do melhor Bolão da Copa?`, // Subject line
+  //       html: htmlToSend // html body
+  //     };
+
+  //     return this.transporter.sendMail(mailerInfo);
+  //   }
+
   async sendWelcome(username: string, email: string) {
     let html = await readFile('./app/mails/welcome.html', 'utf8');
     let template = handlebars.compile(html);

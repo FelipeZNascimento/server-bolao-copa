@@ -2,6 +2,12 @@ import SuccessClass from './success';
 import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 
+export interface IUserOld {
+  name: string;
+  fullName: string;
+  email: string;
+}
+
 export interface IUserRaw {
   email?: string;
   id_user: number | null;
@@ -117,6 +123,12 @@ class UserClass extends QueryMaker {
     return super.runQuery(
       `SELECT nickname FROM users_info WHERE nickname = ? AND id_user != ?`,
       [nickname, id]
+    );
+  }
+
+  async getOld() {
+    return super.runQuery(
+      `SELECT name, full_name as fullName, email FROM users2018`
     );
   }
 
