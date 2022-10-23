@@ -3,7 +3,6 @@ import { TNews } from '../classes/news';
 import { ITeam } from '../classes/team';
 
 const NodeCache = require('node-cache');
-
 const CacheInstance = new NodeCache({ checkperiod: 10 });
 
 class CacheClass {

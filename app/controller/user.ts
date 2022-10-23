@@ -1,7 +1,7 @@
 import ErrorClass from '../classes/error';
 import MailerClass from '../classes/mailer';
 import SuccessClass from '../classes/success';
-import UserClass, { IUser, IUserRaw } from '../classes/user';
+import UserClass, { IUser, IUserOld, IUserRaw } from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { guidGenerator } from '../utilities/guidGenerator';
 
@@ -381,3 +381,26 @@ exports.recoverPassword = async function (req: any, res: any) {
     return userInstance.error.returnApi();
   }
 };
+
+// exports.helloAgain = async function (req: any, res: any) {
+//   const userInstance = new UserClass({}, req, res);
+
+//   try {
+//     await userInstance.getOld().then((users: IUserOld[]) => {
+//       const mailerInstance = new MailerClass();
+
+//       users.forEach((user, index) => {
+//         setTimeout(function () {
+//           mailerInstance.sendHelloAgain(user.fullName, user.email);
+//           console.log('Enviando e-mail para ', user.email);
+//         }, index * 1000);
+//       });
+
+//       userInstance.success.setResult(users);
+//       return userInstance.success.returnApi();
+//     });
+//   } catch (error) {
+//     userInstance.error.catchError(error);
+//     return userInstance.error.returnApi();
+//   }
+// };

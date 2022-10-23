@@ -13,13 +13,6 @@ interface IStadium {
   longitude: string;
 }
 
-interface IConfederation {
-  id: number;
-  abbreviation: string;
-  name: string;
-  nameEn: string;
-}
-
 interface ICountry {
   id: number;
   abbreviation: string;
@@ -36,10 +29,13 @@ interface IReferee {
 
 export interface IMatchRaw {
   id: number;
+  id_fifa: number;
   timestamp: string;
   round: number;
   status: number;
   home_id: number;
+  home_id_fifa: number;
+  away_id_fifa: number;
   away_id: number;
   goals_home: number;
   goals_away: number;
@@ -86,6 +82,7 @@ export interface IMatchRaw {
 
 export interface IMatch {
   id: number;
+  idFifa: number;
   timestamp: string;
   round: number;
   status: number;
@@ -122,6 +119,7 @@ class MatchClass extends QueryMaker {
   formatRawMatch(matchRaw: IMatchRaw) {
     return {
       id: matchRaw.id,
+      idFifa: matchRaw.id_fifa,
       timestamp: matchRaw.timestamp,
       round: matchRaw.round,
       status: matchRaw.status,
@@ -129,6 +127,7 @@ class MatchClass extends QueryMaker {
       loggedUserBets: null,
       homeTeam: {
         id: matchRaw.home_id,
+        idFifa: matchRaw.home_id_fifa,
         isoCode: matchRaw.home_iso_code,
         name: matchRaw.home_name,
         nameEn: matchRaw.home_name_en,
@@ -150,6 +149,7 @@ class MatchClass extends QueryMaker {
       },
       awayTeam: {
         id: matchRaw.away_id,
+        idFifa: matchRaw.away_id_fifa,
         isoCode: matchRaw.away_iso_code,
         name: matchRaw.away_name,
         nameEn: matchRaw.away_name_en,
@@ -218,11 +218,11 @@ class MatchClass extends QueryMaker {
 
   async getAll() {
     return super.runQuery(
-      `SELECT matches.id, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,
+      `SELECT matches.id, matches.id_fifa, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,
         matches.penalties_home, matches.penalties_away, matches.id_referee, matches.id_stadium,
         matches.status,
 
-        homeTeam.id as home_id, homeTeam.group as home_group, 
+        homeTeam.id as home_id, homeTeam.group as home_group, homeTeam.id_fifa as home_id_fifa,
         
         homeTeamCountry.id_confederation as home_id_confederation,
         homeTeamCountry.name as home_name, homeTeamCountry.name_en as home_name_en,
@@ -230,7 +230,7 @@ class MatchClass extends QueryMaker {
         homeTeamCountry.abbreviation_en as home_name_abbreviation_en,
         homeTeamCountry.iso_code as home_iso_code, 
         
-        awayTeam.id as away_id, awayTeam.group as away_group,
+        awayTeam.id as away_id, awayTeam.group as away_group, awayTeam.id_fifa as away_id_fifa,
         
         awayTeamCountry.id_confederation as away_id_confederation,
         awayTeamCountry.name as away_name, awayTeamCountry.name_en as away_name_en,
