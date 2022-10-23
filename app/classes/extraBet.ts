@@ -169,7 +169,7 @@ class ExtraBetClass extends QueryMaker {
     return super.runQuery(
       `INSERT INTO extra_bets (id_user, id_extra_type, id_team, id_player)
         SELECT ?, ?, ?, ?
-        FROM extra_bets
+        FROM (SELECT 1) x
         WHERE ? > UNIX_TIMESTAMP()
         ON DUPLICATE KEY UPDATE
         id_team = VALUES(id_team),
