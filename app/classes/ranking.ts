@@ -26,7 +26,7 @@ export interface IUserRanking extends IUser {
 
 export interface IRanking {
   round: number;
-  users: IUserRanking[];
+  rankingUsers: IUserRanking[];
 }
 
 class RankingClass extends QueryMaker {
@@ -42,7 +42,7 @@ class RankingClass extends QueryMaker {
 
     this.ranking = {
       round: 0,
-      users: []
+      rankingUsers: []
     };
   }
 
@@ -61,7 +61,7 @@ class RankingClass extends QueryMaker {
 
     this.ranking = {
       ...this.ranking,
-      users: rankingUsers
+      rankingUsers: rankingUsers
     };
   }
 
@@ -135,7 +135,7 @@ class RankingClass extends QueryMaker {
     allExtraBets: IExtraBet[],
     allExtraBetsResults: IExtraBetResults[]
   ) {
-    this.ranking.users.forEach((user) => {
+    this.ranking.rankingUsers.forEach((user) => {
       const userExtraBets = allExtraBets.filter(
         (item) => item.user.id === user.id
       );
@@ -183,7 +183,7 @@ class RankingClass extends QueryMaker {
       });
     });
 
-    this.ranking.users.sort(
+    this.ranking.rankingUsers.sort(
       (a, b) =>
         b.points - a.points ||
         b.full - a.full ||
@@ -194,7 +194,7 @@ class RankingClass extends QueryMaker {
 
     let currentPosition: number;
     let lastCheckedUser: IUserRanking | null = null;
-    this.ranking.users.forEach((item) => {
+    this.ranking.rankingUsers.forEach((item) => {
       if (lastCheckedUser === null) {
         currentPosition = 1;
       } else {

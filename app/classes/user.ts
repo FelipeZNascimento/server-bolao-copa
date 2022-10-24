@@ -247,6 +247,15 @@ class UserClass extends QueryMaker {
       [id, token]
     );
   }
+
+  async updateIsActive(id: IUser['id'], updateIsActive: IUser['isActive']) {
+    return super.runQuery(
+      `UPDATE users_info
+      SET is_active = ?
+      WHERE id_user = ?`,
+      [updateIsActive, id]
+    );
+  }
 }
 
 export default UserClass;
