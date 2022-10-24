@@ -46,7 +46,7 @@ exports.listAll = async function (req: any, res: any) {
       const formattedUsers = users.map((user) =>
         userInstance.formatRawUser(user)
       );
-      userInstance.success.setResult(formattedUsers);
+      userInstance.success.setResult({ users: formattedUsers });
       return userInstance.success.returnApi();
     });
   } catch (error) {
@@ -70,7 +70,7 @@ exports.listById = async function (req: any, res: any) {
   }
 };
 
-exports.register = async function register(req: any, res: any) {
+exports.register = async function (req: any, res: any) {
   const userInstance = new UserClass(req.body, req, res);
   try {
     if (
@@ -382,6 +382,27 @@ exports.recoverPassword = async function (req: any, res: any) {
   }
 };
 
+exports.updateIsActive = async function (req: any, res: any) {
+  const userInstance = new UserClass(req.body, req, res);
+  if (!req.session.user) {
+    userInstance.error.setResult([ERROR_CODES.USER_NOT_FOUND]);
+    return userInstance.error.returnApi(401);
+  } else if (req.session.user.id !== 9 && req.session.user.id !== 17) {
+    userInstance.error.setResult([ERROR_CODES.NOT_ALLOWED]);
+    return userInstance.error.returnApi(401);
+  }
+
+  try {
+    userInstance
+      .updateIsActive(userInstance.id, !userInstance.isActive)
+      .then((result) => {
+        return userInstance.success.returnApi();
+      });
+  } catch (error) {
+    userInstance.error.catchError(error);
+    return userInstance.error.returnApi();
+  }
+};
 // exports.helloAgain = async function (req: any, res: any) {
 //   const userInstance = new UserClass({}, req, res);
 

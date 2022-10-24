@@ -21,6 +21,9 @@ const routes = (app: Express) => {
 
   // User Routing
   app.route('/copa2022/user/').get(userController.listAll);
+  app
+    .route('/copa2022/user/updateIsActive/')
+    .post(userController.updateIsActive);
   app.route('/copa2022/user/updateInfo/').post(userController.updateInfo);
   app
     .route('/copa2022/user/updatePassword/')
@@ -48,7 +51,7 @@ const routes = (app: Express) => {
 
   // Match Routing
   app.route('/copa2022/match/').get(matchController.listAll);
-  app.route('/copa2022/match/update/').get(matchController.update);
+  //   app.route('/copa2022/match/update/').get(matchController.update);
 
   // Ranking Routing
   app.route('/copa2022/ranking/').get(rankingController.listAll);
