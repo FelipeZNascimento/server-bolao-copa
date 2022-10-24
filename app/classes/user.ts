@@ -134,9 +134,10 @@ class UserClass extends QueryMaker {
 
   async getAll() {
     return super.runQuery(
-      `SELECT SQL_NO_CACHE id_user, name, nickname, is_active,
-        UNIX_TIMESTAMP(last_timestamp) as last_timestamp
-        FROM users_info`
+      `SELECT SQL_NO_CACHE users_info.id_user, users_info.name, users_info.nickname, users_info.is_active,
+        UNIX_TIMESTAMP(users_info.last_timestamp) as last_timestamp, users.email
+        FROM users_info
+        INNER JOIN users ON users.id = users_info.id_user`
     );
   }
 
