@@ -4,7 +4,7 @@ import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
 import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
-// import axios from 'axios';
+import axios from 'axios';
 import { FINISHED_GAME } from '../const/matchStatus';
 
 exports.listAll = async (req: any, res: any) => {
@@ -130,54 +130,83 @@ exports.listAll = async (req: any, res: any) => {
   }
 };
 
-// exports.update = async (req: any, res: any) => {
-//   const matchInstance = new MatchClass(req, res);
+const isMatchTwelveHoursDistance = (matchTimestamp: number) => {
+  const nowTime = Date.now();
 
-//   let matches = [];
-//   if (myCache.has('matches')) {
-//     matches = myCache.get('matches');
-//   } else {
-//     return;
-//   }
+  const twelveHours = 12 * 1000 * 60 * 60;
+  const fourHours = 4 * 1000 * 60 * 60;
+  const twelveHoursAgo = nowTime - twelveHours;
+  const fourHoursAhead = nowTime + fourHours;
 
-//   const allFormattedMatches: any[] = [];
-//   for (let i = 0; i < matches.length; i++) {
-//     if (
-//       FINISHED_GAME.includes(matches[i].status) ||
-//       !matches[i].idFifa ||
-//       matches[i].round > 3
-//     ) {
-//       return;
-//     }
+  return matchTimestamp > twelveHoursAgo && matchTimestamp < fourHoursAhead;
+}
 
-//     const response = await axios.get(
-//       `https://api.fifa.com/api/v3/live/football/17/255711/285063/${matches[i].idFifa}?language=en`
-//     );
+exports.update = async (req: any, res: any) => {
+  const matchInstance = new MatchClass(req, res);
 
-//     if (!response || !response.data) {
-//       return;
-//     }
+  let matches: IMatch[] = [];
+  if (myCache.has('matches')) {
+    matches = myCache.get('matches');
+  } else {
+    return;
+  }
 
-//     const matchObj = response.data;
-//     const formattedMatchObj = {
-//       id: matches[i].idFifa,
-//       home: {
-//         name: matchObj.HomeTeam.TeamName[0].Description,
-//         score: matchObj.HomeTeam.Score
-//       },
-//       away: {
-//         name: matchObj.AwayTeam.TeamName[0].Description,
-//         score: matchObj.AwayTeam.Score
-//       }
-//     };
-//     allFormattedMatches.push(formattedMatchObj);
-//   }
+  try {
+    let allQueries = [];
+    for (let i = 0; i < matches.length; i++) {
+      const matchTimestamp = new Date(matches[i].timestamp).getTime();
+      if (
+        !FINISHED_GAME.includes(matches[i].status) &&
+        matches[i].idFifa &&
+        matches[i].round <= 3 &&
+        isMatchTwelveHoursDistance(matchTimestamp)
+      ) {
+        allQueries.push(
+          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${matches[i].idFifa}?language=en`)
+        );
+      }
+    }
 
-//   // NOT WORKING - ASYNC/AWAIT ISSUES
-//   // THIS IS BEING SET BEFORE AXIOS GETS INFO
-//   matchInstance.success.setResult(allFormattedMatches);
-//   return matchInstance.success.returnApi();
-// };
+    const allResults = await Promise.allSettled(allQueries);
+    const rejectedReasons: string[] = (allResults as PromiseRejectedResult[])
+      .filter((res) => res.status === 'rejected')
+      .map((res) => res.reason);
+
+    if (rejectedReasons.length > 0) {
+      matchInstance.error.pushResult({
+        code: UNKNOWN_ERROR_CODE,
+        message: rejectedReasons[0]
+      });
+      return matchInstance.error.returnApi();
+    }
+
+    const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
+      .filter((res) => res.status === 'fulfilled')
+      .map((res) => res.value);
+
+    // const fifaMatches: any[] = fulfilledValues.map((item) => fifaMatches.push(item.data));
+
+    const formattedMatchObj = fulfilledValues.map((item) => ({
+      fifaId: item.data.IdMatch,
+      home: {
+        name: item.data.HomeTeam.TeamName[0].Description,
+        score: item.data.HomeTeam.Score
+      },
+      away: {
+        name: item.data.AwayTeam.TeamName[0].Description,
+        score: item.data.AwayTeam.Score
+      }
+    }));
+
+    formattedMatchObj.forEach((item) => matchInstance.update(item.fifaId, item.home.score, item.away.score));
+
+    matchInstance.success.setResult(formattedMatchObj);
+    return matchInstance.success.returnApi();
+  } catch (error: unknown) {
+    matchInstance.error.catchError(error);
+    return matchInstance.error.returnApi();
+  }
+};
 
 // https://api.fifa.com/api/v3/live/football/17/255711/285063/400235486?language=en
 // https://api.fifa.com/api/v3/live/football/17/255711/285063/{match.id}?language=en

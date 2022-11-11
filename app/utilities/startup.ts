@@ -19,6 +19,15 @@ exports.start = async () => {
     ];
 
     const allResults = await Promise.allSettled(allQueries);
+
+    const rejectedReasons: string[] = (allResults as PromiseRejectedResult[])
+      .filter((res) => res.status === 'rejected')
+      .map((res) => res.reason);
+
+    if (rejectedReasons.length > 0) {
+      console.log(rejectedReasons);
+    }
+
     const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
@@ -55,6 +64,7 @@ exports.start = async () => {
     console.log('---------------');
   } catch (error: unknown) {
     console.log('---Error on startup---');
+    console.log('---------------');
     console.log(error);
   }
 };
