@@ -268,6 +268,17 @@ class MatchClass extends QueryMaker {
       []
     );
   }
+
+  async update(fifaId: number, goals_home: number, goals_away: number) {
+    return super.runQuery(
+      `UPDATE matches
+        SET goals_home = ?,
+        goals_away = ?
+        WHERE id_fifa = ?`,
+      [goals_home, goals_away, fifaId]
+    );
+  }
+
 }
 
 export default MatchClass;
