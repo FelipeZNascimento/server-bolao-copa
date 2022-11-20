@@ -274,7 +274,9 @@ class MatchClass extends QueryMaker {
   async update(
     fifaId: number,
     goalsHome: number,
+    penaltiesHome: number,
     goalsAway: number,
+    penaltiesAway: number,
     refereeFifaId: number | null,
     matchTime: string,
     matchStatus: number
@@ -282,12 +284,14 @@ class MatchClass extends QueryMaker {
     return super.runQuery(
       `UPDATE matches
         SET goals_home = ?,
+        penalties_home = ?,
         goals_away = ?,
+        penalties_away = ?,
         id_referee = ?,
         clock = ?,
         status = ?
         WHERE id_fifa = ?`,
-      [goalsHome, goalsAway, refereeFifaId, matchTime, matchStatus, fifaId]
+      [goalsHome, penaltiesHome, goalsAway, penaltiesAway, refereeFifaId, matchTime, matchStatus, fifaId]
     );
   }
 

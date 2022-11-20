@@ -231,18 +231,20 @@ exports.update = async (req: any, res: any) => {
         matchStatus: newStatus,
         home: {
           name: item.data.HomeTeam.TeamName[0].Description,
-          score: item.data.HomeTeam.Score
+          score: item.data.HomeTeam.Score,
+          penalties: item.data.HomeTeamPenaltyScore
         },
         away: {
           name: item.data.AwayTeam.TeamName[0].Description,
-          score: item.data.AwayTeam.Score
+          score: item.data.AwayTeam.Score,
+          penalties: item.data.AwayTeamPenaltyScore
         }
       }
     }
     );
 
     formattedMatchObj.forEach((item) => matchInstance.update(
-      item.fifaId, item.home.score, item.away.score, item.refereeId, item.matchTime, item.matchStatus
+      item.fifaId, item.home.score, item.home.penalties, item.away.score, item.away.penalties, item.refereeId, item.matchTime, item.matchStatus
     ));
 
     matchInstance.success.setResult(formattedMatchObj);
