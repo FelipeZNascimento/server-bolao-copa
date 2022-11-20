@@ -19,6 +19,9 @@ const getStatus = (fifaStatus: number) => {
     case 4: {
       return FOOTBALL_MATCH_STATUS.HALFTIME;
     }
+    case 5: {
+      return FOOTBALL_MATCH_STATUS.SECOND_HALF;
+    }
     case 10: {
       return FOOTBALL_MATCH_STATUS.FINAL;
     }
