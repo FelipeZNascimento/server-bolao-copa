@@ -33,6 +33,7 @@ export interface IMatchRaw {
   timestamp: string;
   round: number;
   status: number;
+  clock: number;
   home_id: number;
   home_id_fifa: number;
   away_id_fifa: number;
@@ -123,6 +124,7 @@ class MatchClass extends QueryMaker {
       timestamp: matchRaw.timestamp,
       round: matchRaw.round,
       status: matchRaw.status,
+      clock: matchRaw.clock,
       bets: [],
       loggedUserBets: null,
       homeTeam: {
@@ -220,7 +222,7 @@ class MatchClass extends QueryMaker {
     return super.runQuery(
       `SELECT matches.id, matches.id_fifa, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,
         matches.penalties_home, matches.penalties_away, matches.id_referee, matches.id_stadium,
-        matches.status,
+        matches.status, matches.clock,
 
         homeTeam.id as home_id, homeTeam.group as home_group, homeTeam.id_fifa as home_id_fifa,
         
@@ -269,14 +271,23 @@ class MatchClass extends QueryMaker {
     );
   }
 
-  async update(fifaId: number, goalsHome: number, goalsAway: number, refereeFifaId: number | null) {
+  async update(
+    fifaId: number,
+    goalsHome: number,
+    goalsAway: number,
+    refereeFifaId: number | null,
+    matchTime: string,
+    matchStatus: number
+    ) {
     return super.runQuery(
       `UPDATE matches
         SET goals_home = ?,
         goals_away = ?,
-        id_referee = ?
+        id_referee = ?,
+        clock = ?,
+        status = ?
         WHERE id_fifa = ?`,
-      [goalsHome, goalsAway, refereeFifaId, fifaId]
+      [goalsHome, goalsAway, refereeFifaId, matchTime, matchStatus, fifaId]
     );
   }
 

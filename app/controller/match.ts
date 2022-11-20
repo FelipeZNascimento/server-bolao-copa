@@ -13,6 +13,12 @@ const getStatus = (fifaStatus: number) => {
     case 0: {
       return FOOTBALL_MATCH_STATUS.NOT_STARTED;
     }
+    case 3: {
+      return FOOTBALL_MATCH_STATUS.FIRST_HALF;
+    }
+    case 4: {
+      return FOOTBALL_MATCH_STATUS.HALFTIME;
+    }
     case 10: {
       return FOOTBALL_MATCH_STATUS.FINAL;
     }
@@ -146,15 +152,15 @@ exports.listAll = async (req: any, res: any) => {
   }
 };
 
-const isMatchTwelveHoursDistance = (matchTimestamp: number) => {
+const isMatchDayDistance = (matchTimestamp: number) => {
   const nowTime = Date.now();
 
-  const twelveHours = 12 * 1000 * 60 * 60;
-  const fourHours = 4 * 1000 * 60 * 60;
-  const twelveHoursAgo = nowTime - twelveHours;
-  const fourHoursAhead = nowTime + fourHours;
+  const day = 24 * 1000 * 60 * 60;
+  const dayAgo = nowTime - day;
+  const dayAhead = nowTime + day;
+  console.log(matchTimestamp > dayAgo, matchTimestamp < dayAhead);
 
-  return matchTimestamp > twelveHoursAgo && matchTimestamp < fourHoursAhead;
+  return matchTimestamp > dayAgo && matchTimestamp < dayAhead;
 }
 
 exports.update = async (req: any, res: any) => {
@@ -178,7 +184,7 @@ exports.update = async (req: any, res: any) => {
         !FINISHED_GAME.includes(matches[i].status) &&
         matches[i].idFifa &&
         matches[i].round <= 3 &&
-        isMatchTwelveHoursDistance(matchTimestamp)
+        isMatchDayDistance(matchTimestamp)
       ) {
         allQueries.push(
           axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${matches[i].idFifa}?language=en`)
@@ -215,10 +221,11 @@ exports.update = async (req: any, res: any) => {
       }
 
       const newStatus = getStatus(item.data.Period);
-
       return {
         fifaId: item.data.IdMatch,
         refereeId: refereeId || null,
+        matchTime: item.data.MatchTime,
+        matchStatus: newStatus,
         home: {
           name: item.data.HomeTeam.TeamName[0].Description,
           score: item.data.HomeTeam.Score
@@ -232,7 +239,7 @@ exports.update = async (req: any, res: any) => {
     );
 
     formattedMatchObj.forEach((item) => matchInstance.update(
-      item.fifaId, item.home.score, item.away.score, item.refereeId
+      item.fifaId, item.home.score, item.away.score, item.refereeId, item.matchTime, item.matchStatus
     ));
 
     matchInstance.success.setResult(formattedMatchObj);
