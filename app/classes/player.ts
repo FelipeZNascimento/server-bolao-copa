@@ -56,7 +56,7 @@ export interface IPlayer {
   weigth: number;
   position: IPosition;
   team: ITeam | null;
-  club: IClub | null;
+  club?: IClub | null;
 }
 
 class PlayerClass extends QueryMaker {
