@@ -1,6 +1,7 @@
-import { IMatch } from '../classes/match';
-import { TNews } from '../classes/news';
-import { ITeam } from '../classes/team';
+import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import NewsClass, { TNews } from '../classes/news';
+import RefereeClass, { IReferee, IRefereeRaw } from '../classes/referee';
+import TeamClass, { ITeam, ITeamRaw } from '../classes/team';
 
 const NodeCache = require('node-cache');
 const CacheInstance = new NodeCache({ checkperiod: 10 });
@@ -28,6 +29,71 @@ class CacheClass {
 
   setNews(news: TNews[]) {
     CacheInstance.set('news', news, 60 * 15); // Every 15min
+  }
+
+  setReferees(referees: IReferee[]) {
+    CacheInstance.set('referees', referees, 60 * 60 * 24); // Daily
+  }
+
+  async refreshAll() {
+    if (!this.has('news')) {
+      console.log('Cache miss: news');
+      const newsInstance = new NewsClass();
+
+      await newsInstance.getAll().then((news) => {
+        this.setNews(news);
+      });
+    }
+
+    if (!this.has('referees')) {
+      console.log('Cache miss: referees');
+      const refereeInstance = new RefereeClass();
+
+      await refereeInstance.getAll().then((rawReferees: IRefereeRaw[]) => {
+        const formattedReferees = rawReferees.map((referee) =>
+          refereeInstance.formatRawReferee(referee)
+        );
+        this.setReferees(formattedReferees);
+      });
+    }
+
+    if (!this.has('teams')) {
+      console.log('Cache miss: teams');
+      const teamInstance = new TeamClass();
+      await teamInstance.getAll().then((rawTeams: ITeamRaw[]) => {
+        const formattedTeams = rawTeams.map((team) =>
+          teamInstance.formatRawTeam(team)
+        );
+        this.setTeams(formattedTeams);
+      });
+    }
+
+    if (!this.has('matches')) {
+      console.log('Cache miss: matches');
+      const matchInstance = new MatchClass();
+      await matchInstance.getAll().then((rawMatches: IMatchRaw[]) => {
+        const formattedMatches: IMatch[] = rawMatches.map((match) =>
+          matchInstance.formatRawMatch(match)
+        );
+        this.setMatches(formattedMatches);
+
+        if (!this.has('seasonStart')) {
+          console.log('Cache miss: season start');
+
+          const seasonStart = formattedMatches.reduce(
+            (prev: IMatch, curr: IMatch) =>
+              prev.timestamp <= curr.timestamp ? prev : curr
+          );
+
+          const seasonStartTimestamp =
+            new Date(seasonStart.timestamp).getTime() / 1000;
+          this.setSeasonStart(seasonStartTimestamp);
+        }
+
+      });
+    }
+
+    return;
   }
 }
 

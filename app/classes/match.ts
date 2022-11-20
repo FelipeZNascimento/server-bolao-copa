@@ -269,13 +269,14 @@ class MatchClass extends QueryMaker {
     );
   }
 
-  async update(fifaId: number, goals_home: number, goals_away: number) {
+  async update(fifaId: number, goalsHome: number, goalsAway: number, refereeFifaId: number | null) {
     return super.runQuery(
       `UPDATE matches
         SET goals_home = ?,
-        goals_away = ?
+        goals_away = ?,
+        id_referee = ?
         WHERE id_fifa = ?`,
-      [goals_home, goals_away, fifaId]
+      [goalsHome, goalsAway, refereeFifaId, fifaId]
     );
   }
 
