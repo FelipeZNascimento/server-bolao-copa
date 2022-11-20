@@ -2,10 +2,26 @@ import BetClass, { IBetRaw } from '../classes/bet';
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import UserClass from '../classes/user';
-import { UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 import axios from 'axios';
-import { FINISHED_GAME } from '../const/matchStatus';
+import { FINISHED_GAME, FOOTBALL_MATCH_STATUS } from '../const/matchStatus';
+import { IReferee } from '../classes/referee';
+
+const getStatus = (fifaStatus: number) => {
+  switch (fifaStatus) {
+    case 0: {
+      return FOOTBALL_MATCH_STATUS.NOT_STARTED;
+    }
+    case 10: {
+      return FOOTBALL_MATCH_STATUS.FINAL;
+    }
+    default: {
+      return FOOTBALL_MATCH_STATUS.NOT_STARTED;
+    }
+  }
+
+}
 
 exports.listAll = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
@@ -145,10 +161,13 @@ exports.update = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
 
   let matches: IMatch[] = [];
-  if (myCache.has('matches')) {
+  let referees: IReferee[] = [];
+  if (myCache.has('matches') && myCache.has('referees')) {
     matches = myCache.get('matches');
+    referees = myCache.get('referees');
   } else {
-    return;
+    matchInstance.error.setResult([ERROR_CODES.CACHE_ERROR]);
+    return matchInstance.error.returnApi();
   }
 
   try {
@@ -186,19 +205,35 @@ exports.update = async (req: any, res: any) => {
 
     // const fifaMatches: any[] = fulfilledValues.map((item) => fifaMatches.push(item.data));
 
-    const formattedMatchObj = fulfilledValues.map((item) => ({
-      fifaId: item.data.IdMatch,
-      home: {
-        name: item.data.HomeTeam.TeamName[0].Description,
-        score: item.data.HomeTeam.Score
-      },
-      away: {
-        name: item.data.AwayTeam.TeamName[0].Description,
-        score: item.data.AwayTeam.Score
+    const formattedMatchObj = fulfilledValues.map((item) => {
+      const official = item.data.Officials.length > 0
+        ? item.data.Officials.find((official: any) => official.OfficialType === 1)
+        : null;
+      let refereeId = null;
+      if (official) {
+        refereeId = referees.find((referee) => referee.idFifa == official.OfficialId)?.id;
       }
-    }));
 
-    formattedMatchObj.forEach((item) => matchInstance.update(item.fifaId, item.home.score, item.away.score));
+      const newStatus = getStatus(item.data.Period);
+
+      return {
+        fifaId: item.data.IdMatch,
+        refereeId: refereeId || null,
+        home: {
+          name: item.data.HomeTeam.TeamName[0].Description,
+          score: item.data.HomeTeam.Score
+        },
+        away: {
+          name: item.data.AwayTeam.TeamName[0].Description,
+          score: item.data.AwayTeam.Score
+        }
+      }
+    }
+    );
+
+    formattedMatchObj.forEach((item) => matchInstance.update(
+      item.fifaId, item.home.score, item.away.score, item.refereeId
+    ));
 
     matchInstance.success.setResult(formattedMatchObj);
     return matchInstance.success.returnApi();

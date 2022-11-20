@@ -2,6 +2,7 @@ import { Express } from 'express';
 ('use strict');
 const routes = (app: Express) => {
   const betController = require('../controller/bet');
+  const cacheController = require('../controller/cache');
   const configController = require('../controller/config');
   const matchController = require('../controller/match');
   const playerController = require('../controller/player');
@@ -11,6 +12,9 @@ const routes = (app: Express) => {
 
   // Initial Config Routing
   app.route('/copa2022/general/config/').get(configController.default);
+
+  // Cache Refresh
+  app.route('/copa2022/general/cacheRefresh/').get(cacheController.refresh);
 
   // Mailer Routing
   //   app.route('/copa2022/user/helloAgain').get(userController.helloAgain);

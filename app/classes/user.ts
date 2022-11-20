@@ -231,7 +231,6 @@ class UserClass extends QueryMaker {
     newPassword: IUser['newPassword'],
     token: IUser['token']
   ) {
-    console.log(id, newPassword, token);
     return super.runQuery(
       `UPDATE users
         JOIN password_recovery ON (password_recovery.token = ? AND password_recovery.consumed = 0)

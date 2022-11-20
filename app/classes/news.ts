@@ -14,7 +14,7 @@ class NewsClass extends QueryMaker {
   error: ErrorClass;
   success: SuccessClass;
 
-  constructor(req: any, res: any) {
+  constructor(req?: any, res?: any) {
     super();
 
     this.error = new ErrorClass({ errors: [] }, req, res);
