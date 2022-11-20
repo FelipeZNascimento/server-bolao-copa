@@ -48,10 +48,11 @@ const routes = (app: Express) => {
 
   // Player Routing
   app.route('/copa2022/player/').get(playerController.listAll);
-
+  
   // Team Routing
   app.route('/copa2022/team/').get(teamController.listAll);
   app.route('/copa2022/team/:id/').get(teamController.listById);
+  app.route('/copa2022/team/:teamId/players').get(teamController.listPlayersByTeam);
 
   // Match Routing
   app.route('/copa2022/match/').get(matchController.listAll);

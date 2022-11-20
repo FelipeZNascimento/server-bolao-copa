@@ -15,7 +15,30 @@ export interface IPosition {
   abbreviation: string;
 }
 
-export interface IPlayerRaw extends IPositionRaw, ITeamRaw {
+export interface IClubRaw {
+  club_country_name: string;
+  club_country_name_en: string;
+  club_country_abbreviation: string;
+  club_country_abbreviation_en: string;
+  club_country_iso_code: string;
+  club_country_id: number;
+  club_name: string;
+}
+
+export interface IClubCountry {
+  id: number;
+  name: string;
+  nameEn: string;
+  abbreviation: string;
+  abbreviationEn: string;
+  isoCode: string;
+}
+export interface IClub {
+  name: string;
+  country: IClubCountry;
+}
+
+export interface IPlayerRaw extends IPositionRaw, ITeamRaw, IClubRaw {
   player_id: number;
   player_name: string;
   player_number: number;
@@ -33,6 +56,7 @@ export interface IPlayer {
   weigth: number;
   position: IPosition;
   team: ITeam | null;
+  club: IClub | null;
 }
 
 class PlayerClass extends QueryMaker {
@@ -54,7 +78,22 @@ class PlayerClass extends QueryMaker {
     this.players = players;
   }
 
-  formatRawTeam(playerRaw: IPlayerRaw) {
+  formatRawPlayer(playerRaw: IPlayerRaw) {
+    let club: IClub | null = null;
+    if (playerRaw.club_name) {
+      club = {
+        name: playerRaw.club_name,
+        country: {
+          id: playerRaw.club_country_id,
+          name: playerRaw.club_country_name,
+          nameEn: playerRaw.club_country_name_en,
+          abbreviation: playerRaw.club_country_abbreviation,
+          abbreviationEn: playerRaw.club_country_abbreviation_en,
+          isoCode: playerRaw.club_country_iso_code
+        }
+      };
+    }
+
     return {
       id: playerRaw.player_id,
       name: playerRaw.player_name,
@@ -88,7 +127,8 @@ class PlayerClass extends QueryMaker {
           name: playerRaw.confederation_name,
           nameEn: playerRaw.confederation_name_en
         }
-      }
+      },
+      club: club
     };
   }
 
@@ -112,6 +152,37 @@ class PlayerClass extends QueryMaker {
         LEFT JOIN teams_colors ON teams_colors.id_team = teams.id
         GROUP BY players.id
         ORDER BY player_name ASC`
+    );
+  }
+
+  async getByTeam(teamId: number) {
+    return super.runQuery(
+      `SELECT players.id as player_id, players.name as player_name, players.number as player_number,
+        players.date_of_birth as player_date_of_birth, players.height as player_height, players.weight as player_weight,
+        positions.id as position_id, positions.description as position_description, positions.abbreviation as position_abbreviation,
+        teams.id as team_id, teams.id_fifa as team_id_fifa, teams.group as team_group,
+        countries.name as team_name, countries.name_en as team_name_en, countries.abbreviation as team_abbreviation,
+        countries.abbreviation_en as team_abbreviation_en, countries.iso_code as team_iso_code,
+        club_country.name as club_country_name, club_country.name_en as club_country_name_en,
+        club_country.abbreviation as club_country_abbreviation,
+        club_country.abbreviation_en as club_country_abbreviation_en, club_country.iso_code as club_country_iso_code,
+        clubs.name as club_name, clubs.id as club_id, clubs.id_country as club_country_id,
+        confederations.id as team_confederation_id, confederations.name as team_confederation_name,
+        confederations.name_en as team_confederation_name_en,
+        confederations.abbreviation as team_confederation_abbreviation,
+        GROUP_CONCAT(DISTINCT teams_colors.color ORDER BY teams_colors.id) team_colors
+        FROM players
+        LEFT JOIN teams ON teams.id = players.id_team
+        LEFT JOIN positions ON positions.id = players.id_position
+        LEFT JOIN clubs ON clubs.id = players.id_club
+        LEFT JOIN countries ON countries.id = teams.id_country
+        LEFT JOIN countries AS club_country ON club_country.id = clubs.id_country
+        LEFT JOIN confederations ON countries.id_confederation = confederations.id
+        LEFT JOIN teams_colors ON teams_colors.id_team = teams.id
+        WHERE teams.id = ?
+        GROUP BY players.id
+        ORDER BY position_id ASC, player_number ASC, player_name ASC`,
+      [teamId]
     );
   }
 

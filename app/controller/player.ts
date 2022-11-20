@@ -6,7 +6,7 @@ exports.listAll = async function (req: any, res: any) {
   try {
     await playerInstance.getAll().then((rawPlayers: IPlayerRaw[]) => {
       const formattedPlayers = rawPlayers.map((player) =>
-        playerInstance.formatRawTeam(player)
+        playerInstance.formatRawPlayer(player)
       );
       playerInstance.setPlayers(formattedPlayers);
       playerInstance.success.setResult({ players: playerInstance.players });
