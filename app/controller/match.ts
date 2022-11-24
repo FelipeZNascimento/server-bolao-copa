@@ -157,25 +157,11 @@ exports.listAll = async (req: any, res: any) => {
   }
 };
 
-const hasFifteenMinutesPassed = (matchTimestamp: number) => {
-  const updateTime = new Date(matchTimestamp);
-  const nowTime = Date.now();
-  const fifteenMinutes = 15 * 60 * 1000;
+const isMatchToday = (matchTimestamp: string) => {
+  const today = new Date().setHours(0, 0, 0, 0);
+  const matchDay = new Date(matchTimestamp).setHours(0, 0, 0, 0);
 
-  updateTime.setTime(updateTime.getTime() + 5 * 1000 * 60 * 60);
-  return updateTime.getTime() + fifteenMinutes < nowTime;
-}
-
-const isMatchTwelveHoursDistance = (matchTimestamp: string) => {
-  const matchTime = new Date(matchTimestamp);
-  // matchTime.setTime(matchTime.getTime() + 5 * 1000 * 60 * 60);
-  const nowTime = Date.now();
-
-  const twelveHours = 12 * 1000 * 60 * 60;
-  const twelveHoursAgo = nowTime - twelveHours;
-  const twelveHoursAhead = nowTime + twelveHours;
-
-  return matchTime.getTime() > twelveHoursAgo && matchTime.getTime() < twelveHoursAhead;
+  return today === matchDay;
 }
 
 exports.update = async (req: any, res: any) => {
@@ -194,24 +180,11 @@ exports.update = async (req: any, res: any) => {
   try {
     let allQueries: any[] = [];
     matches.forEach((match) => {
-      const lastUpdated = new Date(match.lastUpdated).getTime();
-      if (
-        !FINISHED_GAME.includes(match.status) &&
-        match.round <= 3 &&
-        isMatchTwelveHoursDistance(match.timestamp)
-      ) {
-        // If game is stopped but +15min has passed since last update, fetch
-        if (STOPPED_GAME.includes(match.status) && hasFifteenMinutesPassed(lastUpdated)) {
-          allQueries.push(
-            axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
-          );
-        } else if (!STOPPED_GAME.includes(match.status)) { // If game is not stopped, fetch
-          allQueries.push(
-            axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
-          );
-        }
+      if (!FINISHED_GAME.includes(match.status) && match.round <= 3 && isMatchToday(match.timestamp)) {
+        allQueries.push(
+          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
+        );
       }
-
     })
 
     const allResults = await Promise.allSettled(allQueries);
