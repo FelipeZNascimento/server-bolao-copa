@@ -5,7 +5,7 @@ import UserClass from '../classes/user';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 import axios from 'axios';
-import { FINISHED_GAME, FOOTBALL_MATCH_STATUS } from '../const/matchStatus';
+import { FINISHED_GAME, FOOTBALL_MATCH_STATUS, STOPPED_GAME } from '../const/matchStatus';
 import { IReferee } from '../classes/referee';
 
 const getStatus = (fifaStatus: number) => {
@@ -33,6 +33,8 @@ const getStatus = (fifaStatus: number) => {
 }
 
 exports.listAll = async (req: any, res: any) => {
+  const isOnlyCurrent = req.originalUrl.indexOf('current') === -1 ? false : true;
+
   const matchInstance = new MatchClass(req, res);
   const teamInstance = new TeamClass(req, res);
   const betInstance = new BetClass({}, req, res);
@@ -129,7 +131,7 @@ exports.listAll = async (req: any, res: any) => {
         betInstance.bets,
         betInstance.loggedUserBets
       );
-      matchInstance.setMatches(mergedMatches);
+      matchInstance.setMatches(mergedMatches, isOnlyCurrent);
     } else {
       const allRawMatches = fulfilledValues.find(
         (item) => item.promiseContent === 'matches'
@@ -143,7 +145,7 @@ exports.listAll = async (req: any, res: any) => {
         betInstance.bets,
         betInstance.loggedUserBets
       );
-      matchInstance.setMatches(mergedMatches);
+      matchInstance.setMatches(mergedMatches, isOnlyCurrent);
       myCache.setMatches(allMatches);
     }
 
@@ -155,15 +157,25 @@ exports.listAll = async (req: any, res: any) => {
   }
 };
 
-const isMatchDayDistance = (matchTimestamp: number) => {
+const hasFifteenMinutesPassed = (matchTimestamp: number) => {
+  const updateTime = new Date(matchTimestamp);
+  const nowTime = Date.now();
+  const fifteenMinutes = 15 * 60 * 1000;
+
+  updateTime.setTime(updateTime.getTime() + 5 * 1000 * 60 * 60);
+  return updateTime.getTime() + fifteenMinutes < nowTime;
+}
+
+const isMatchTwelveHoursDistance = (matchTimestamp: string) => {
+  const matchTime = new Date(matchTimestamp);
+  matchTime.setTime(matchTime.getTime() + 5 * 1000 * 60 * 60);
   const nowTime = Date.now();
 
-  const day = 24 * 1000 * 60 * 60;
-  const dayAgo = nowTime - day;
-  const dayAhead = nowTime + day;
-  console.log(matchTimestamp > dayAgo, matchTimestamp < dayAhead);
+  const twelveHours = 12 * 1000 * 60 * 60;
+  const twelveHoursAgo = nowTime - twelveHours;
+  const twelveHoursAhead = nowTime + twelveHours;
 
-  return matchTimestamp > dayAgo && matchTimestamp < dayAhead;
+  return matchTime.getTime() > twelveHoursAgo && matchTime.getTime() < twelveHoursAhead;
 }
 
 exports.update = async (req: any, res: any) => {
@@ -180,20 +192,27 @@ exports.update = async (req: any, res: any) => {
   }
 
   try {
-    let allQueries = [];
-    for (let i = 0; i < matches.length; i++) {
-      const matchTimestamp = new Date(matches[i].timestamp).getTime();
+    let allQueries: any[] = [];
+    matches.forEach((match) => {
+      const lastUpdated = new Date(match.lastUpdated).getTime();
       if (
-        !FINISHED_GAME.includes(matches[i].status) &&
-        matches[i].idFifa &&
-        matches[i].round <= 3 &&
-        isMatchDayDistance(matchTimestamp)
+        !FINISHED_GAME.includes(match.status) &&
+        match.round <= 3 &&
+        isMatchTwelveHoursDistance(match.timestamp)
       ) {
-        allQueries.push(
-          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${matches[i].idFifa}?language=en`)
-        );
+        // If game is stopped but +15min has passed since last update, fetch
+        if (STOPPED_GAME.includes(match.status) && hasFifteenMinutesPassed(lastUpdated)) {
+          allQueries.push(
+            axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
+          );
+        } else if (!STOPPED_GAME.includes(match.status)) { // If game is not stopped, fetch
+          allQueries.push(
+            axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
+          );
+        }
       }
-    }
+
+    })
 
     const allResults = await Promise.allSettled(allQueries);
     const rejectedReasons: string[] = (allResults as PromiseRejectedResult[])
@@ -232,19 +251,30 @@ exports.update = async (req: any, res: any) => {
         home: {
           name: item.data.HomeTeam.TeamName[0].Description,
           score: item.data.HomeTeam.Score,
-          penalties: item.data.HomeTeamPenaltyScore
+          penalties: item.data.HomeTeamPenaltyScore,
+          possession: item.data.BallPossession.OverallHome || 0
         },
         away: {
           name: item.data.AwayTeam.TeamName[0].Description,
           score: item.data.AwayTeam.Score,
-          penalties: item.data.AwayTeamPenaltyScore
+          penalties: item.data.AwayTeamPenaltyScore,
+          possession: item.data.BallPossession.OverallAway || 0
         }
       }
     }
     );
 
     formattedMatchObj.forEach((item) => matchInstance.update(
-      item.fifaId, item.home.score, item.home.penalties, item.away.score, item.away.penalties, item.refereeId, item.matchTime, item.matchStatus
+      item.fifaId,
+      item.home.score,
+      item.home.penalties,
+      item.home.possession,
+      item.away.score,
+      item.away.penalties,
+      item.away.possession,
+      item.refereeId,
+      item.matchTime,
+      item.matchStatus
     ));
 
     matchInstance.success.setResult(formattedMatchObj);

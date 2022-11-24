@@ -3,6 +3,7 @@ import ErrorClass from './error';
 import QueryMaker from './queryMaker';
 import { IBet } from './bet';
 import { ITeam } from './team';
+import { FOOTBALL_MATCH_STATUS } from '../const/matchStatus';
 
 interface IStadium {
   id: number;
@@ -42,6 +43,8 @@ export interface IMatchRaw {
   goals_away: number;
   penalties_home: number;
   penalties_away: number;
+  possession_home: number;
+  possession_away: number;
   id_stadium: number;
   id_referee: number;
   home_name: string;
@@ -79,6 +82,7 @@ export interface IMatchRaw {
   referee_country_abbreviation: string;
   home_team_colors: string;
   away_team_colors: string;
+  last_updated: string;
 }
 
 export interface IMatch {
@@ -93,6 +97,7 @@ export interface IMatch {
   awayTeam: ITeam;
   stadium: IStadium;
   referee: IReferee;
+  lastUpdated: string;
 }
 
 export interface IRound {
@@ -125,6 +130,7 @@ class MatchClass extends QueryMaker {
       round: matchRaw.round,
       status: matchRaw.status,
       clock: matchRaw.clock,
+      lastUpdated: matchRaw.last_updated,
       bets: [],
       loggedUserBets: null,
       homeTeam: {
@@ -147,7 +153,8 @@ class MatchClass extends QueryMaker {
           abbreviation: matchRaw.home_confederation_abbreviation,
           name: matchRaw.home_confederation_name,
           nameEn: matchRaw.home_confederation_name_en
-        }
+        },
+        possession: matchRaw.possession_home
       },
       awayTeam: {
         id: matchRaw.away_id,
@@ -169,7 +176,8 @@ class MatchClass extends QueryMaker {
           abbreviation: matchRaw.away_confederation_abbreviation,
           name: matchRaw.away_confederation_name,
           nameEn: matchRaw.away_confederation_name_en
-        }
+        },
+        possession: matchRaw.possession_away
       },
       referee: {
         id: matchRaw.id_referee,
@@ -208,8 +216,12 @@ class MatchClass extends QueryMaker {
     return matches;
   }
 
-  setMatches(matches: IMatch[]) {
-    this.matches = matches;
+  setMatches(matches: IMatch[], isOnlyCurrent: boolean = false) {
+    if (isOnlyCurrent) {
+      this.matches = matches.filter((match) => match.status !== FOOTBALL_MATCH_STATUS.FINAL && match.status !== FOOTBALL_MATCH_STATUS.NOT_STARTED);
+    } else {
+      this.matches = matches;
+    }
   }
 
   async getFirst() {
@@ -221,8 +233,9 @@ class MatchClass extends QueryMaker {
   async getAll() {
     return super.runQuery(
       `SELECT matches.id, matches.id_fifa, matches.timestamp, matches.round, matches.goals_home, matches.goals_away,
-        matches.penalties_home, matches.penalties_away, matches.id_referee, matches.id_stadium,
-        matches.status, matches.clock,
+        matches.penalties_home, matches.penalties_away, matches.possession_home, matches.possession_away,
+        matches.id_referee, matches.id_stadium,
+        matches.status, matches.clock, matches.last_updated,
 
         homeTeam.id as home_id, homeTeam.group as home_group, homeTeam.id_fifa as home_id_fifa,
         
@@ -275,23 +288,28 @@ class MatchClass extends QueryMaker {
     fifaId: number,
     goalsHome: number,
     penaltiesHome: number,
+    possessionHome: string,
     goalsAway: number,
     penaltiesAway: number,
+    possessionAway: string,
     refereeFifaId: number | null,
     matchTime: string,
     matchStatus: number
-    ) {
+  ) {
     return super.runQuery(
       `UPDATE matches
         SET goals_home = ?,
         penalties_home = ?,
+        possession_home = ?,
         goals_away = ?,
         penalties_away = ?,
+        possession_away = ?,
         id_referee = ?,
         clock = ?,
-        status = ?
+        status = ?,
+        last_updated = NOW()
         WHERE id_fifa = ?`,
-      [goalsHome, penaltiesHome, goalsAway, penaltiesAway, refereeFifaId, matchTime, matchStatus, fifaId]
+      [goalsHome, penaltiesHome, possessionHome, goalsAway, penaltiesAway, possessionAway, refereeFifaId, matchTime, matchStatus, fifaId]
     );
   }
 

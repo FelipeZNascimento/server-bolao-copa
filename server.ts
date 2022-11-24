@@ -47,12 +47,13 @@ app.use(express.json());
 const sessionSecret = process.env.SESSION_SECRET;
 
 const sevenDays = 7 * 24 * 60 * 60 * 1000;
+const environment = app.get('env');
 
 const sessionSettings = {
   cookie: {
     maxAge: sevenDays,
     sameSite: false,
-    secure: true
+    secure: environment === 'production'
   },
   name: 'omegafoxBolaCopa2022',
   resave: true,
@@ -65,23 +66,15 @@ const sessionSettings = {
 
 let server: Server;
 let serverPort: number;
-const environment = app.get('env');
 
 app.set('trust proxy', 1); // trust first proxy
 
 if (environment === 'production') {
   serverPort = 40000;
-  server = http.createServer(app);
 } else {
   serverPort = 63768;
-  server = https.createServer(
-    {
-      key: fs.readFileSync('certs/key.pem'),
-      cert: fs.readFileSync('certs/cert.pem')
-    },
-    app
-  );
 }
+server = http.createServer(app);
 
 sessionSettings.store = new MySQLStore(SQLConfig.returnConfig(environment));
 
