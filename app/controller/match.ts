@@ -168,7 +168,7 @@ const hasFifteenMinutesPassed = (matchTimestamp: number) => {
 
 const isMatchTwelveHoursDistance = (matchTimestamp: string) => {
   const matchTime = new Date(matchTimestamp);
-  matchTime.setTime(matchTime.getTime() + 5 * 1000 * 60 * 60);
+  // matchTime.setTime(matchTime.getTime() + 5 * 1000 * 60 * 60);
   const nowTime = Date.now();
 
   const twelveHours = 12 * 1000 * 60 * 60;
