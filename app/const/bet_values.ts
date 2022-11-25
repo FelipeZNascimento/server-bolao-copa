@@ -20,24 +20,32 @@ export const EXTRA_BET_POINTS = {
 };
 
 export const BET_MULTIPLIER = {
-  GROUP: {
+  GROUP_1: {
     ROUND: 1,
     MULTIPLIER: 1
   },
-  ROUND_OF_16: {
+  GROUP_2: {
     ROUND: 2,
+    MULTIPLIER: 1
+  },
+  GROUP_3: {
+    ROUND: 3,
+    MULTIPLIER: 1
+  },
+  ROUND_OF_16: {
+    ROUND: 4,
     MULTIPLIER: 2
   },
   ROUND_OF_8: {
-    ROUND: 3,
+    ROUND: 5,
     MULTIPLIER: 3
   },
   SEMI_FINALS: {
-    ROUND: 4,
+    ROUND: 6,
     MULTIPLIER: 4
   },
   FINALS: {
-    ROUND: 5,
+    ROUND: 7,
     MULTIPLIER: 5
   }
 };
