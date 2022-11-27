@@ -1,12 +1,19 @@
-import BetClass, { IBetRaw } from '../classes/bet';
-import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
-import TeamClass, { ITeamRaw } from '../classes/team';
-import UserClass from '../classes/user';
-import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { myCache } from '../utilities/cache';
 import axios from 'axios';
-import { FINISHED_GAME, FOOTBALL_MATCH_STATUS, STOPPED_GAME } from '../const/matchStatus';
+
+// Classes
+import BetClass, { IBetRaw } from '../classes/bet';
+import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import TeamClass, { ITeam, ITeamRaw } from '../classes/team';
+import UserClass from '../classes/user';
+import PlayerClass, { IPlayer } from '../classes/player';
 import { IReferee } from '../classes/referee';
+import { formatFifaGoals } from './event';
+
+// Constants
+import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
+import { FINISHED_GAME, FOOTBALL_MATCH_STATUS } from '../const/matchStatus';
+import EventsClass, { IEvent, IEventRaw } from '../classes/events';
 
 const getStatus = (fifaStatus: number) => {
   switch (fifaStatus) {
@@ -29,23 +36,26 @@ const getStatus = (fifaStatus: number) => {
       return FOOTBALL_MATCH_STATUS.NOT_STARTED;
     }
   }
-
 }
+
 
 exports.listAll = async (req: any, res: any) => {
   const isOnlyCurrent = req.originalUrl.indexOf('current') === -1 ? false : true;
 
+  const betInstance = new BetClass({}, req, res);
+  const eventInstance = new EventsClass(req, res);
   const matchInstance = new MatchClass(req, res);
   const teamInstance = new TeamClass(req, res);
-  const betInstance = new BetClass({}, req, res);
   const userInstance = new UserClass({}, req, res);
+
   const loggedUser = req.session.user;
   if (loggedUser) {
     userInstance.updateTimestamp(loggedUser.id);
   }
   try {
     const allQueries = [
-      betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' }))
+      betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' })),
+      eventInstance.getAll().then((res) => ({ res: res, promiseContent: 'events' }))
     ];
 
     if (!myCache.has('teams')) {
@@ -89,6 +99,16 @@ exports.listAll = async (req: any, res: any) => {
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
 
+    const allRawEvents = fulfilledValues.find(
+      (item) => item.promiseContent === 'events'
+    ).res;
+
+    const allEvents = allRawEvents.map((event: IEventRaw) =>
+      eventInstance.formatRawEvent(event)
+    );
+
+    eventInstance.setEvents(allEvents);
+
     const allRawBets = fulfilledValues.find(
       (item) => item.promiseContent === 'bets'
     ).res;
@@ -126,10 +146,11 @@ exports.listAll = async (req: any, res: any) => {
     }
 
     if (myCache.has('matches')) {
-      const mergedMatches = matchInstance.mergeBets(
+      const mergedMatches = matchInstance.mergeBetsAndEvents(
         myCache.get('matches'),
         betInstance.bets,
-        betInstance.loggedUserBets
+        betInstance.loggedUserBets,
+        eventInstance.events
       );
       matchInstance.setMatches(mergedMatches, isOnlyCurrent);
     } else {
@@ -140,10 +161,11 @@ exports.listAll = async (req: any, res: any) => {
         matchInstance.formatRawMatch(match)
       );
 
-      const mergedMatches = matchInstance.mergeBets(
+      const mergedMatches = matchInstance.mergeBetsAndEvents(
         allMatches,
         betInstance.bets,
-        betInstance.loggedUserBets
+        betInstance.loggedUserBets,
+        eventInstance.events
       );
       matchInstance.setMatches(mergedMatches, isOnlyCurrent);
       myCache.setMatches(allMatches);
@@ -168,10 +190,15 @@ exports.update = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
 
   let matches: IMatch[] = [];
+  let players: IPlayer[] = [];
   let referees: IReferee[] = [];
-  if (myCache.has('matches') && myCache.has('referees')) {
+  let teams: ITeam[] = [];
+
+  if (myCache.has('matches') && myCache.has('referees') && myCache.has('players') && myCache.has('teams')) {
     matches = myCache.get('matches');
+    players = myCache.get('players');
     referees = myCache.get('referees');
+    teams = myCache.get('teams');
   } else {
     matchInstance.error.setResult([ERROR_CODES.CACHE_ERROR]);
     return matchInstance.error.returnApi();
@@ -216,7 +243,11 @@ exports.update = async (req: any, res: any) => {
       }
 
       const newStatus = getStatus(item.data.Period);
+      const match = matches.find((singleMatch) => singleMatch.idFifa == item.data.IdMatch);
+      const matchId = match ? match.id : null;
+
       return {
+        matchId: matchId,
         fifaId: item.data.IdMatch,
         refereeId: refereeId || null,
         matchTime: item.data.MatchTime,
@@ -225,30 +256,50 @@ exports.update = async (req: any, res: any) => {
           name: item.data.HomeTeam.TeamName[0].Description,
           score: item.data.HomeTeam.Score,
           penalties: item.data.HomeTeamPenaltyScore,
-          possession: item.data.BallPossession.OverallHome || 0
+          possession: item.data.BallPossession.OverallHome || 0,
+          goals: formatFifaGoals(item.data.HomeTeam.Goals, players, matchId)
         },
         away: {
           name: item.data.AwayTeam.TeamName[0].Description,
           score: item.data.AwayTeam.Score,
           penalties: item.data.AwayTeamPenaltyScore,
-          possession: item.data.BallPossession.OverallAway || 0
+          possession: item.data.BallPossession.OverallAway || 0,
+          goals: formatFifaGoals(item.data.AwayTeam.Goals, players, matchId)
+
         }
       }
-    }
-    );
+    });
 
-    formattedMatchObj.forEach((item) => matchInstance.update(
-      item.fifaId,
-      item.home.score,
-      item.home.penalties,
-      item.home.possession,
-      item.away.score,
-      item.away.penalties,
-      item.away.possession,
-      item.refereeId,
-      item.matchTime,
-      item.matchStatus
-    ));
+    formattedMatchObj.forEach((item) => {
+      item.home.goals.forEach((goal) => matchInstance.insertEvents(
+        goal.eventType,
+        goal.playerId || null,
+        goal.playerTwoId,
+        goal.gametime,
+        item.matchId
+      ));
+
+      item.away.goals.forEach((goal) => matchInstance.insertEvents(
+        goal.eventType,
+        goal.playerId || null,
+        goal.playerTwoId,
+        goal.gametime,
+        item.matchId
+      ));
+
+      matchInstance.update(
+        item.fifaId,
+        item.home.score,
+        item.home.penalties,
+        item.home.possession,
+        item.away.score,
+        item.away.penalties,
+        item.away.possession,
+        item.refereeId,
+        item.matchTime,
+        item.matchStatus
+      )
+    });
 
     matchInstance.success.setResult(formattedMatchObj);
     return matchInstance.success.returnApi();

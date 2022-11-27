@@ -97,6 +97,8 @@ class ExtraBetClass extends QueryMaker {
       },
       player: {
         id: extraBetRaw.player_id,
+        idFifa: extraBetRaw.player_id_fifa,
+        idFifaPicture: extraBetRaw.player_id_fifa_picture,
         name: extraBetRaw.player_name,
         number: extraBetRaw.player_number,
         birth: extraBetRaw.player_date_of_birth,

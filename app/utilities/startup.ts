@@ -1,4 +1,5 @@
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
+import PlayerClass, { IPlayerRaw } from '../classes/player';
 import RefereeClass, { IRefereeRaw } from '../classes/referee';
 import TeamClass, { ITeamRaw } from '../classes/team';
 import { myCache } from '../utilities/cache';
@@ -8,8 +9,9 @@ exports.start = async () => {
   console.log('Starting up...');
   try {
     const matchInstance = new MatchClass();
-    const teamInstance = new TeamClass();
+    const playerInstance = new PlayerClass();
     const refereeInstance = new RefereeClass();
+    const teamInstance = new TeamClass();
 
     const allQueries = [
       teamInstance
@@ -20,7 +22,10 @@ exports.start = async () => {
         .then((res) => ({ res: res, promiseContent: 'matches' })),
       refereeInstance
         .getAll()
-        .then((res) => ({ res: res, promiseContent: 'referees' }))
+        .then((res) => ({ res: res, promiseContent: 'referees' })),
+      playerInstance
+        .getAll()
+        .then((res) => ({ res: res, promiseContent: 'players' }))
     ];
 
     const allResults = await Promise.allSettled(allQueries);
@@ -52,6 +57,14 @@ exports.start = async () => {
       matchInstance.formatRawMatch(match)
     );
 
+    const allPlayersRaw = fulfilledValues.find(
+      (item) => item.promiseContent === 'players'
+    ).res;
+
+    const formattedPlayers = allPlayersRaw.map((player: IPlayerRaw) =>
+      playerInstance.formatRawPlayer(player)
+    );
+
     const allRefereesRaw = fulfilledValues.find(
       (item) => item.promiseContent === 'referees'
     ).res;
@@ -60,9 +73,10 @@ exports.start = async () => {
       refereeInstance.formatRawReferee(referee)
     );
 
-    myCache.setTeams(formattedTeams);
     myCache.setMatches(formattedMatches);
+    myCache.setPlayers(formattedPlayers);
     myCache.setReferees(formattedReferees);
+    myCache.setTeams(formattedTeams);
 
     const seasonStart = formattedMatches.reduce(
       (prev: IMatch, curr: IMatch) =>
