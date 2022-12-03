@@ -135,34 +135,37 @@ class RankingClass extends QueryMaker {
     allExtraBets: IExtraBet[],
     allExtraBetsResults: IExtraBetResults[]
   ) {
+    const strikers = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.STRIKER && extraBet.id_striker !== null);
+    const offenses = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.OFFENSE && extraBet.id_team !== null);
+    const defenses = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.DEFENSE && extraBet.id_team !== null);
+    const champions = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.CHAMPION && extraBet.id_team !== null);
+
     this.ranking.rankingUsers.forEach((user) => {
       const userExtraBets = allExtraBets.filter(
         (item) => item.user.id === user.id
       );
       if (allExtraBetsResults.length > 0 && userExtraBets.length > 0) {
-        const results = allExtraBetsResults[0];
         userExtraBets.forEach((userExtraBet) => {
           if (userExtraBet.team) {
             if (
               userExtraBet.idExtraType === EXTRA_TYPES.CHAMPION &&
-              userExtraBet.team?.id === results.id_champion
+              champions.find((item) => item.id_team === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.CHAMPION;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
-              userExtraBet.team?.id === results.id_offense
+              offenses.find((item) => item.id_team === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.OFFENSE;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
-              userExtraBet.team?.id === results.id_defense
+              defenses.find((item) => item.id_team === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.DEFENSE;
             }
           } else if (
-            userExtraBet.player?.id &&
             userExtraBet.idExtraType === EXTRA_TYPES.STRIKER &&
-            userExtraBet.player.id === results.id_striker
+            strikers.find((item) => item.id_striker === userExtraBet.player?.id)
           ) {
             user.extras += EXTRA_BET_POINTS.STRIKER;
           }

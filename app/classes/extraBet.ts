@@ -6,10 +6,9 @@ import { ITeam } from './team';
 import { IPlayer, IPlayerRaw } from './player';
 
 export interface IExtraBetResults {
-  id_champion: number | null;
-  id_offense: number | null;
-  id_defense: number | null;
   id_striker: number | null;
+  id_team: number | null;
+  id_type: number | null;
 }
 
 export interface IExtraBetRaw extends IPlayerRaw {
@@ -135,7 +134,7 @@ class ExtraBetClass extends QueryMaker {
 
   async getResults(seasonStart: number) {
     return super.runQuery(
-      `SELECT id_champion, id_offense, id_defense, id_striker
+      `SELECT id_team, id_type, id_striker
         FROM extra_bets_results
         WHERE ? < UNIX_TIMESTAMP()`,
       [seasonStart]
