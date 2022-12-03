@@ -1,9 +1,10 @@
 import { myCache } from '../utilities/cache';
 
 import BetClass from '../classes/bet';
-import ExtraBetClass, { IExtraBetRaw } from '../classes/extraBet';
+import ExtraBetClass, { IExtraBetRaw, IExtraBetResults } from '../classes/extraBet';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import UserClass from '../classes/user';
+import { EXTRA_TYPES } from '../const/bet_values';
 
 exports.update = async (req: any, res: any) => {
   const betInstance = new BetClass(req.body, req, res);
@@ -79,7 +80,11 @@ exports.listAllExtras = async (req: any, res: any) => {
         .then((res) => ({ res: res, promiseContent: 'extraBets' })),
       extraBetInstance
         .getFromLoggedUser(loggedUser ? loggedUser.id : null)
-        .then((res) => ({ res: res, promiseContent: 'loggedUserExtraBets' }))
+        .then((res) => ({ res: res, promiseContent: 'loggedUserExtraBets' })),
+      extraBetInstance
+        .getResults(seasonStartTimestamp)
+        .then((res) => ({ res: res, promiseContent: 'extraBetsResults' }))
+
     ];
 
     const allResults = await Promise.allSettled(allQueries);
@@ -107,6 +112,10 @@ exports.listAllExtras = async (req: any, res: any) => {
       (item) => item.promiseContent === 'loggedUserExtraBets'
     ).res;
 
+    const allExtraBetsResults: IExtraBetResults[] = fulfilledValues.find(
+      (item) => item.promiseContent === 'extraBetsResults'
+    ).res;
+
     const formattedExtraBets = extraBetsRaw.map((bet) =>
       extraBetInstance.formatRawExtraBet(bet, teams)
     );
@@ -116,6 +125,7 @@ exports.listAllExtras = async (req: any, res: any) => {
     );
 
     extraBetInstance.setExtraBets(formattedExtraBets);
+    extraBetInstance.setExtraBetsResults(allExtraBetsResults);
     extraBetInstance.setLoggedUserExtraBets(formattedLoggedUserExtraBets);
 
     const buildObject = extraBetInstance.buildConfigObject();

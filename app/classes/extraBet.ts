@@ -4,11 +4,13 @@ import QueryMaker from './queryMaker';
 import { IUser } from './user';
 import { ITeam } from './team';
 import { IPlayer, IPlayerRaw } from './player';
+import { EXTRA_TYPES } from '../const/bet_values';
 
 export interface IExtraBetResults {
-  id_striker: number | null;
-  id_team: number | null;
-  id_type: number | null;
+  idStriker: number | null;
+  nameStriker: string | null;
+  idTeam: number | null;
+  idType: number | null;
 }
 
 export interface IExtraBetRaw extends IPlayerRaw {
@@ -49,6 +51,7 @@ class ExtraBetClass extends QueryMaker {
 
   newExtraBet: INewExtraBet | null;
   extraBets: IExtraBet[];
+  extraBetsResults: IExtraBetResults[];
   loggedUserExtraBets: IExtraBet[];
 
   constructor(req?: any, res?: any) {
@@ -59,18 +62,34 @@ class ExtraBetClass extends QueryMaker {
 
     this.newExtraBet = null;
     this.extraBets = [];
+    this.extraBetsResults = [];
     this.loggedUserExtraBets = [];
   }
 
   buildConfigObject() {
+    const strikers = this.extraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.STRIKER && extraBet.idStriker !== null);
+    const offenses = this.extraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.OFFENSE && extraBet.idTeam !== null);
+    const defenses = this.extraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.DEFENSE && extraBet.idTeam !== null);
+    const champions = this.extraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.CHAMPION && extraBet.idTeam !== null);
+
     return {
       extraBets: this.extraBets,
+      extraBetsResults: {
+        offense: offenses,
+        defense: defenses,
+        striker: strikers,
+        champion: champions
+      },
       loggedUserExtraBets: this.loggedUserExtraBets
     };
   }
 
   setExtraBets(extraBets: IExtraBet[]) {
     this.extraBets = extraBets;
+  }
+
+  setExtraBetsResults(extraBetsResults: IExtraBetResults[]) {
+    this.extraBetsResults = extraBetsResults;
   }
 
   setLoggedUserExtraBets(extraBets: IExtraBet[]) {
@@ -134,8 +153,10 @@ class ExtraBetClass extends QueryMaker {
 
   async getResults(seasonStart: number) {
     return super.runQuery(
-      `SELECT id_team, id_type, id_striker
+      `SELECT extra_bets_results.id_team as idTeam, extra_bets_results.id_type as idType,
+        extra_bets_results.id_striker as idStriker, players.name as nameStriker
         FROM extra_bets_results
+        LEFT JOIN players on players.id = extra_bets_results.id_striker
         WHERE ? < UNIX_TIMESTAMP()`,
       [seasonStart]
     );

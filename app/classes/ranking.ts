@@ -135,10 +135,10 @@ class RankingClass extends QueryMaker {
     allExtraBets: IExtraBet[],
     allExtraBetsResults: IExtraBetResults[]
   ) {
-    const strikers = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.STRIKER && extraBet.id_striker !== null);
-    const offenses = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.OFFENSE && extraBet.id_team !== null);
-    const defenses = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.DEFENSE && extraBet.id_team !== null);
-    const champions = allExtraBetsResults.filter((extraBet) => extraBet.id_type === EXTRA_TYPES.CHAMPION && extraBet.id_team !== null);
+    const strikers = allExtraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.STRIKER && extraBet.idStriker !== null);
+    const offenses = allExtraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.OFFENSE && extraBet.idTeam !== null);
+    const defenses = allExtraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.DEFENSE && extraBet.idTeam !== null);
+    const champions = allExtraBetsResults.filter((extraBet) => extraBet.idType === EXTRA_TYPES.CHAMPION && extraBet.idTeam !== null);
 
     this.ranking.rankingUsers.forEach((user) => {
       const userExtraBets = allExtraBets.filter(
@@ -149,23 +149,23 @@ class RankingClass extends QueryMaker {
           if (userExtraBet.team) {
             if (
               userExtraBet.idExtraType === EXTRA_TYPES.CHAMPION &&
-              champions.find((item) => item.id_team === userExtraBet.team?.id)
+              champions.find((item) => item.idTeam === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.CHAMPION;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
-              offenses.find((item) => item.id_team === userExtraBet.team?.id)
+              offenses.find((item) => item.idTeam === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.OFFENSE;
             } else if (
               userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
-              defenses.find((item) => item.id_team === userExtraBet.team?.id)
+              defenses.find((item) => item.idTeam === userExtraBet.team?.id)
             ) {
               user.extras += EXTRA_BET_POINTS.DEFENSE;
             }
           } else if (
             userExtraBet.idExtraType === EXTRA_TYPES.STRIKER &&
-            strikers.find((item) => item.id_striker === userExtraBet.player?.id)
+            strikers.find((item) => item.idStriker === userExtraBet.player?.id)
           ) {
             user.extras += EXTRA_BET_POINTS.STRIKER;
           }
