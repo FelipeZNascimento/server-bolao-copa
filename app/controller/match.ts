@@ -14,6 +14,7 @@ import { formatFifaGoals } from './event';
 import { ERROR_CODES, UNKNOWN_ERROR_CODE } from '../const/error_codes';
 import { FINISHED_GAME, FOOTBALL_MATCH_STATUS } from '../const/matchStatus';
 import EventsClass, { IEvent, IEventRaw } from '../classes/events';
+import { BET_MULTIPLIER } from '../const/bet_values';
 
 const getStatus = (fifaStatus: number) => {
   switch (fifaStatus) {
@@ -186,6 +187,31 @@ const isMatchToday = (matchTimestamp: string) => {
   return today === matchDay;
 }
 
+const getStageId = (round: number) => {
+  switch (round) {
+    case BET_MULTIPLIER.GROUP_1.ROUND:
+    case BET_MULTIPLIER.GROUP_2.ROUND:
+    case BET_MULTIPLIER.GROUP_3.ROUND: {
+      return 285063;
+    }
+    case BET_MULTIPLIER.ROUND_OF_16.ROUND: {
+      return 285073;
+    }
+    case BET_MULTIPLIER.ROUND_OF_8.ROUND: {
+      return 285074;
+    }
+    case BET_MULTIPLIER.SEMI_FINALS.ROUND: {
+      return 285075;
+    }
+    case BET_MULTIPLIER.FINALS.ROUND: {
+      return 285077;
+    }
+    default: {
+      return FOOTBALL_MATCH_STATUS.NOT_STARTED;
+    }
+  }
+}
+
 exports.update = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
 
@@ -207,9 +233,10 @@ exports.update = async (req: any, res: any) => {
   try {
     let allQueries: any[] = [];
     matches.forEach((match) => {
-      if (!FINISHED_GAME.includes(match.status) && match.round <= 3 && isMatchToday(match.timestamp)) {
+      if (!FINISHED_GAME.includes(match.status) && isMatchToday(match.timestamp)) {
+        const stage = getStageId(match.round);
         allQueries.push(
-          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/285063/${match.idFifa}?language=en`)
+          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/${stage}/${match.idFifa}?language=en`)
         );
       }
     })
@@ -230,8 +257,6 @@ exports.update = async (req: any, res: any) => {
     const fulfilledValues: any[] = (allResults as PromiseFulfilledResult<any>[])
       .filter((res) => res.status === 'fulfilled')
       .map((res) => res.value);
-
-    // const fifaMatches: any[] = fulfilledValues.map((item) => fifaMatches.push(item.data));
 
     const formattedMatchObj = fulfilledValues.map((item) => {
       const official = item.data.Officials.length > 0
