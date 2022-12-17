@@ -37,11 +37,11 @@ const getStatus = (fifaStatus: number) => {
       return FOOTBALL_MATCH_STATUS.NOT_STARTED;
     }
   }
-}
-
+};
 
 exports.listAll = async (req: any, res: any) => {
-  const isOnlyCurrent = req.originalUrl.indexOf('current') === -1 ? false : true;
+  const isOnlyCurrent =
+    req.originalUrl.indexOf('current') === -1 ? false : true;
 
   const betInstance = new BetClass({}, req, res);
   const eventInstance = new EventsClass(req, res);
@@ -55,8 +55,12 @@ exports.listAll = async (req: any, res: any) => {
   }
   try {
     const allQueries = [
-      betInstance.getAll().then((res) => ({ res: res, promiseContent: 'bets' })),
-      eventInstance.getAll().then((res) => ({ res: res, promiseContent: 'events' }))
+      betInstance
+        .getAll()
+        .then((res) => ({ res: res, promiseContent: 'bets' })),
+      eventInstance
+        .getAll()
+        .then((res) => ({ res: res, promiseContent: 'events' }))
     ];
 
     if (!myCache.has('teams')) {
@@ -185,7 +189,7 @@ const isMatchToday = (matchTimestamp: string) => {
   const matchDay = new Date(matchTimestamp).setHours(0, 0, 0, 0);
 
   return today === matchDay;
-}
+};
 
 const getStageId = (round: number) => {
   switch (round) {
@@ -210,7 +214,7 @@ const getStageId = (round: number) => {
       return FOOTBALL_MATCH_STATUS.NOT_STARTED;
     }
   }
-}
+};
 
 exports.update = async (req: any, res: any) => {
   const matchInstance = new MatchClass(req, res);
@@ -220,7 +224,12 @@ exports.update = async (req: any, res: any) => {
   let referees: IReferee[] = [];
   let teams: ITeam[] = [];
 
-  if (myCache.has('matches') && myCache.has('referees') && myCache.has('players') && myCache.has('teams')) {
+  if (
+    myCache.has('matches') &&
+    myCache.has('referees') &&
+    myCache.has('players') &&
+    myCache.has('teams')
+  ) {
     matches = myCache.get('matches');
     players = myCache.get('players');
     referees = myCache.get('referees');
@@ -233,13 +242,18 @@ exports.update = async (req: any, res: any) => {
   try {
     let allQueries: any[] = [];
     matches.forEach((match) => {
-      if (!FINISHED_GAME.includes(match.status) && isMatchToday(match.timestamp)) {
-        const stage = getStageId(match.round);
+      if (
+        !FINISHED_GAME.includes(match.status) &&
+        isMatchToday(match.timestamp)
+      ) {
+        const stage = match.id === 62 ? 285075 : getStageId(match.round);
         allQueries.push(
-          axios.get(`https://api.fifa.com/api/v3/live/football/17/255711/${stage}/${match.idFifa}?language=en`)
+          axios.get(
+            `https://api.fifa.com/api/v3/live/football/17/255711/${stage}/${match.idFifa}?language=en`
+          )
         );
       }
-    })
+    });
 
     const allResults = await Promise.allSettled(allQueries);
     const rejectedReasons: string[] = (allResults as PromiseRejectedResult[])
@@ -259,16 +273,23 @@ exports.update = async (req: any, res: any) => {
       .map((res) => res.value);
 
     const formattedMatchObj = fulfilledValues.map((item) => {
-      const official = item.data.Officials.length > 0
-        ? item.data.Officials.find((official: any) => official.OfficialType === 1)
-        : null;
+      const official =
+        item.data.Officials.length > 0
+          ? item.data.Officials.find(
+              (official: any) => official.OfficialType === 1
+            )
+          : null;
       let refereeId = null;
       if (official) {
-        refereeId = referees.find((referee) => referee.idFifa == official.OfficialId)?.id;
+        refereeId = referees.find(
+          (referee) => referee.idFifa == official.OfficialId
+        )?.id;
       }
 
       const newStatus = getStatus(item.data.Period);
-      const match = matches.find((singleMatch) => singleMatch.idFifa == item.data.IdMatch);
+      const match = matches.find(
+        (singleMatch) => singleMatch.idFifa == item.data.IdMatch
+      );
       const matchId = match ? match.id : null;
 
       return {
@@ -290,27 +311,30 @@ exports.update = async (req: any, res: any) => {
           penalties: item.data.AwayTeamPenaltyScore,
           possession: item.data.BallPossession.OverallAway || 0,
           goals: formatFifaGoals(item.data.AwayTeam.Goals, players, matchId)
-
         }
-      }
+      };
     });
 
     formattedMatchObj.forEach((item) => {
-      item.home.goals.forEach((goal) => matchInstance.insertEvents(
-        goal.eventType,
-        goal.playerId || null,
-        goal.playerTwoId,
-        goal.gametime,
-        item.matchId
-      ));
+      item.home.goals.forEach((goal) =>
+        matchInstance.insertEvents(
+          goal.eventType,
+          goal.playerId || null,
+          goal.playerTwoId,
+          goal.gametime,
+          item.matchId
+        )
+      );
 
-      item.away.goals.forEach((goal) => matchInstance.insertEvents(
-        goal.eventType,
-        goal.playerId || null,
-        goal.playerTwoId,
-        goal.gametime,
-        item.matchId
-      ));
+      item.away.goals.forEach((goal) =>
+        matchInstance.insertEvents(
+          goal.eventType,
+          goal.playerId || null,
+          goal.playerTwoId,
+          goal.gametime,
+          item.matchId
+        )
+      );
 
       matchInstance.update(
         item.fifaId,
@@ -323,7 +347,7 @@ exports.update = async (req: any, res: any) => {
         item.refereeId,
         item.matchTime,
         item.matchStatus
-      )
+      );
     });
 
     matchInstance.success.setResult(formattedMatchObj);
