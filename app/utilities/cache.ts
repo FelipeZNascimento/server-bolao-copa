@@ -1,5 +1,6 @@
 import MatchClass, { IMatch, IMatchRaw } from '../classes/match';
 import NewsClass, { TNews } from '../classes/news';
+import PlayerClass, { IPlayer, IPlayerRaw } from '../classes/player';
 import RefereeClass, { IReferee, IRefereeRaw } from '../classes/referee';
 import TeamClass, { ITeam, ITeamRaw } from '../classes/team';
 
@@ -35,6 +36,10 @@ class CacheClass {
     CacheInstance.set('referees', referees, 60 * 60 * 24); // Daily
   }
 
+  setPlayers(players: IPlayer[]) {
+    CacheInstance.set('players', players, 60 * 60 * 24); // Daily
+  }
+
   async refreshAll() {
     if (!this.has('news')) {
       console.log('Cache miss: news');
@@ -54,6 +59,18 @@ class CacheClass {
           refereeInstance.formatRawReferee(referee)
         );
         this.setReferees(formattedReferees);
+      });
+    }
+
+    if (!this.has('players')) {
+      console.log('Cache miss: players');
+      const playerInstance = new PlayerClass();
+
+      await playerInstance.getAll().then((rawPlayers: IPlayerRaw[]) => {
+        const formattedPlayers = rawPlayers.map((player) =>
+          playerInstance.formatRawPlayer(player)
+        );
+        this.setPlayers(formattedPlayers);
       });
     }
 

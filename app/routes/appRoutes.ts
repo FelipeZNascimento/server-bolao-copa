@@ -4,6 +4,7 @@ const routes = (app: Express) => {
   const betController = require('../controller/bet');
   const cacheController = require('../controller/cache');
   const configController = require('../controller/config');
+  const eventController = require('../controller/event');
   const matchController = require('../controller/match');
   const playerController = require('../controller/player');
   const rankingController = require('../controller/ranking');
@@ -48,15 +49,18 @@ const routes = (app: Express) => {
 
   // Player Routing
   app.route('/copa2022/player/').get(playerController.listAll);
+  // app.route('/copa2022/player/update').get(playerController.getAllPlayers);
   
   // Team Routing
   app.route('/copa2022/team/').get(teamController.listAll);
   app.route('/copa2022/team/:id/').get(teamController.listById);
   app.route('/copa2022/team/:teamId/players').get(teamController.listPlayersByTeam);
-
+  
   // Match Routing
   app.route('/copa2022/match/').get(matchController.listAll);
   app.route('/copa2022/match/update/').get(matchController.update);
+  app.route('/copa2022/match/current/').get(matchController.listAll);
+  app.route('/copa2022/match/events').get(eventController.getAllMatchEvents);
 
   // Ranking Routing
   app.route('/copa2022/ranking/').get(rankingController.listAll);

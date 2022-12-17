@@ -40,6 +40,8 @@ export interface IClub {
 
 export interface IPlayerRaw extends IPositionRaw, ITeamRaw, IClubRaw {
   player_id: number;
+  player_id_fifa: number;
+  player_id_fifa_picture: string;
   player_name: string;
   player_number: number;
   player_date_of_birth: string;
@@ -49,13 +51,15 @@ export interface IPlayerRaw extends IPositionRaw, ITeamRaw, IClubRaw {
 
 export interface IPlayer {
   id: number;
+  idFifa: number;
+  idFifaPicture: string;
   name: string;
   number: number;
-  birth: string;
-  height: number;
-  weigth: number;
+  birth?: string;
+  height?: number;
+  weigth?: number;
   position: IPosition;
-  team: ITeam | null;
+  team?: ITeam | null;
   club?: IClub | null;
 }
 
@@ -96,6 +100,8 @@ class PlayerClass extends QueryMaker {
 
     return {
       id: playerRaw.player_id,
+      idFifa: playerRaw.player_id_fifa,
+      idFifaPicture: playerRaw.player_id_fifa_picture,
       name: playerRaw.player_name,
       number: playerRaw.player_number,
       birth: playerRaw.player_date_of_birth,
@@ -134,7 +140,8 @@ class PlayerClass extends QueryMaker {
 
   async getAll() {
     return super.runQuery(
-      `SELECT players.id as player_id, players.name as player_name, players.number as player_number,
+      `SELECT players.id as player_id, players.name as player_name, players.number as player_number, players.id_fifa as player_id_fifa,
+        players.id_fifa_picture as player_id_fifa_picture,
         players.date_of_birth as player_date_of_birth, players.height as player_height, players.weight as player_weight,
         positions.id as position_id, positions.description as position_description, positions.abbreviation as position_abbreviation,
         teams.id as team_id, teams.id_fifa as team_id_fifa, teams.group as team_group,
@@ -157,7 +164,8 @@ class PlayerClass extends QueryMaker {
 
   async getByTeam(teamId: number) {
     return super.runQuery(
-      `SELECT players.id as player_id, players.name as player_name, players.number as player_number,
+      `SELECT players.id as player_id, players.name as player_name, players.number as player_number, players.id_fifa as player_id_fifa,
+        players.id_fifa_picture as player_id_fifa_picture,
         players.date_of_birth as player_date_of_birth, players.height as player_height, players.weight as player_weight,
         positions.id as position_id, positions.description as position_description, positions.abbreviation as position_abbreviation,
         teams.id as team_id, teams.id_fifa as team_id_fifa, teams.group as team_group,
@@ -209,6 +217,41 @@ class PlayerClass extends QueryMaker {
       [id]
     );
   }
+
+  async updateFifaId(
+    fifaId: number,
+    teamId: number,
+    shirtNumber: number
+  ) {
+    if (!teamId || !fifaId || !shirtNumber) {
+      return;
+    }
+
+    return super.runQuery(
+      `UPDATE players
+        SET id_fifa = ?
+        WHERE id_team = ? AND number = ?`,
+      [fifaId, teamId, shirtNumber]
+    );
+  }
+
+  async updateFifaPictureId(
+    fifaPictureId: number,
+    teamId: number,
+    shirtNumber: number
+  ) {
+    if (!teamId || !fifaPictureId || !shirtNumber) {
+      return;
+    }
+
+    return super.runQuery(
+      `UPDATE players
+        SET id_fifa_picture = ?
+        WHERE id_team = ? AND number = ?`,
+      [fifaPictureId, teamId, shirtNumber]
+    );
+  }
+
 }
 
 export default PlayerClass;

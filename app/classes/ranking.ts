@@ -135,34 +135,48 @@ class RankingClass extends QueryMaker {
     allExtraBets: IExtraBet[],
     allExtraBetsResults: IExtraBetResults[]
   ) {
+    const strikers = allExtraBetsResults.filter(
+      (extraBet) =>
+        extraBet.idType === EXTRA_TYPES.STRIKER && extraBet.idStriker !== null
+    );
+    const offenses = allExtraBetsResults.filter(
+      (extraBet) =>
+        extraBet.idType === EXTRA_TYPES.OFFENSE && extraBet.idTeam !== null
+    );
+    const defenses = allExtraBetsResults.filter(
+      (extraBet) =>
+        extraBet.idType === EXTRA_TYPES.DEFENSE && extraBet.idTeam !== null
+    );
+    const champions = allExtraBetsResults.filter(
+      (extraBet) =>
+        extraBet.idType === EXTRA_TYPES.CHAMPION && extraBet.idTeam !== null
+    );
+
     this.ranking.rankingUsers.forEach((user) => {
       const userExtraBets = allExtraBets.filter(
         (item) => item.user.id === user.id
       );
+
       if (allExtraBetsResults.length > 0 && userExtraBets.length > 0) {
-        const results = allExtraBetsResults[0];
         userExtraBets.forEach((userExtraBet) => {
-          if (userExtraBet.team) {
-            if (
-              userExtraBet.idExtraType === EXTRA_TYPES.CHAMPION &&
-              userExtraBet.team?.id === results.id_champion
-            ) {
-              user.extras += EXTRA_BET_POINTS.CHAMPION;
-            } else if (
-              userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
-              userExtraBet.team?.id === results.id_offense
-            ) {
-              user.extras += EXTRA_BET_POINTS.OFFENSE;
-            } else if (
-              userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
-              userExtraBet.team?.id === results.id_defense
-            ) {
-              user.extras += EXTRA_BET_POINTS.DEFENSE;
-            }
+          if (
+            userExtraBet.idExtraType === EXTRA_TYPES.CHAMPION &&
+            champions.find((item) => item.idTeam === userExtraBet.team?.id)
+          ) {
+            user.extras += EXTRA_BET_POINTS.CHAMPION;
           } else if (
-            userExtraBet.player?.id &&
+            userExtraBet.idExtraType === EXTRA_TYPES.OFFENSE &&
+            offenses.find((item) => item.idTeam === userExtraBet.team?.id)
+          ) {
+            user.extras += EXTRA_BET_POINTS.OFFENSE;
+          } else if (
+            userExtraBet.idExtraType === EXTRA_TYPES.DEFENSE &&
+            defenses.find((item) => item.idTeam === userExtraBet.team?.id)
+          ) {
+            user.extras += EXTRA_BET_POINTS.DEFENSE;
+          } else if (
             userExtraBet.idExtraType === EXTRA_TYPES.STRIKER &&
-            userExtraBet.player.id === results.id_striker
+            strikers.find((item) => item.idStriker === userExtraBet.player?.id)
           ) {
             user.extras += EXTRA_BET_POINTS.STRIKER;
           }

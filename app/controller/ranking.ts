@@ -106,7 +106,7 @@ exports.listAll = async (req: any, res: any) => {
     extraBetInstance.setExtraBets(allExtraBets);
 
     if (myCache.has('matches')) {
-      const mergedMatches = matchInstance.mergeBets(
+      const mergedMatches = matchInstance.mergeBetsAndEvents(
         myCache.get('matches'),
         betInstance.bets
       );
@@ -119,7 +119,7 @@ exports.listAll = async (req: any, res: any) => {
         matchInstance.formatRawMatch(match)
       );
 
-      const mergedMatches = matchInstance.mergeBets(
+      const mergedMatches = matchInstance.mergeBetsAndEvents(
         allMatches,
         betInstance.bets
       );
